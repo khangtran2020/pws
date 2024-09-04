@@ -1,0 +1,9 @@
+vllm==0.5.0
+pandas==2.2.2
+tqdm==4.66.4
+numpy==1.26.4
+fast_edit_distance==1.2.1
+transformers==4.42.4
+yapf==0.40.2
+black==24.8.0
+pandarallel==1.6.5
