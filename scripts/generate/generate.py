@@ -136,57 +136,64 @@ def run(args, filepath: str, csvpath: str):
     )
     r = p.stdout.read().decode("utf-8") + p.stderr.read().decode("utf-8")
 
-    df_res = pd.read_csv(
-        os.path.join(csvpath, f"cqlres-cwe{args.cwe}.csv"), header=None
-    )
-    df_res.columns = [f"Col_{i}" for i in range(df_res.shape[1])]
-    df_res["Col_4"] = df_res["Col_4"].apply(lambda x: x[1:])
+    try:
+        df_res = pd.read_csv(
+            os.path.join(csvpath, f"cqlres-cwe{args.cwe}.csv"), header=None
+        )
+        df_res.columns = [f"Col_{i}" for i in range(df_res.shape[1])]
+        df_res["Col_4"] = df_res["Col_4"].apply(lambda x: x[1:])
 
-    temp_uuid = []
-    vul_func = []
-    df_res = df_res.groupby("Col_4")["Col_5"].apply(list)
-    for key, item in zip(df_res.index, df_res):
-        funcs = ""
-        with open(os.path.join(filepath, key), "r") as f:
-            codes = f.read()
-            for index in item:
-                funcs += f"|{detect_scope(code=codes, line_number=index)}"
-        if key in temp_uuid:
-            idx = temp_uuid.index(key)
-            if len(funcs[1:]) > len(vul_func[idx]):
-                vul_func[idx] = funcs[1:]
-        else:
-            temp_uuid.append(key)
-            vul_func.append(funcs[1:])
+        temp_uuid = []
+        vul_func = []
+        df_res = df_res.groupby("Col_4")["Col_5"].apply(list)
+        for key, item in zip(df_res.index, df_res):
+            funcs = ""
+            with open(os.path.join(filepath, key), "r") as f:
+                codes = f.read()
+                for index in item:
+                    funcs += f"|{detect_scope(code=codes, line_number=index)}"
+            if key in temp_uuid:
+                idx = temp_uuid.index(key)
+                if len(funcs[1:]) > len(vul_func[idx]):
+                    vul_func[idx] = funcs[1:]
+            else:
+                temp_uuid.append(key)
+                vul_func.append(funcs[1:])
 
-    df["final_label"] = 0
-    df["vul_func"] = "N/A"
+        df["final_label"] = 0
+        df["vul_func"] = "N/A"
 
-    res_df = pd.DataFrame({"new_name": temp_uuid, "vul_func": vul_func})
-    res_df["final_label"] = 1
-    res_df = res_df.reset_index(drop=True)
+        res_df = pd.DataFrame({"new_name": temp_uuid, "vul_func": vul_func})
+        res_df["final_label"] = 1
+        res_df = res_df.reset_index(drop=True)
 
-    if res_df["new_name"].duplicated().sum() > 0:
-        print(res_df.head())
+        if res_df["new_name"].duplicated().sum() > 0:
+            print(res_df.head())
 
-    update_df = (
-        df.loc[df["sample_name"].isin(res_df["new_name"])].copy().reset_index(drop=True)
-    )
+        update_df = (
+            df.loc[df["sample_name"].isin(res_df["new_name"])]
+            .copy()
+            .reset_index(drop=True)
+        )
 
-    non_update_df = (
-        df.loc[df["sample_name"].isin(res_df["new_name"]) == False]
-        .copy()
-        .reset_index(drop=True)
-    )
-    update_df = update_df.drop(["final_label", "vul_func"], axis=1)
-    update_df = update_df.merge(res_df, left_on="sample_name", right_on="new_name")
-    df = (
-        pd.concat([non_update_df, update_df], axis=0)
-        .sort_values("id")
-        .reset_index(drop=True)
-    )
-    df = df.drop(["new_name"], axis=1)
-    df.to_csv(os.path.join(csvpath, f"{args.model}-gendata-raw.csv"), index=False)
+        non_update_df = (
+            df.loc[df["sample_name"].isin(res_df["new_name"]) == False]
+            .copy()
+            .reset_index(drop=True)
+        )
+        update_df = update_df.drop(["final_label", "vul_func"], axis=1)
+        update_df = update_df.merge(res_df, left_on="sample_name", right_on="new_name")
+        df = (
+            pd.concat([non_update_df, update_df], axis=0)
+            .sort_values("id")
+            .reset_index(drop=True)
+        )
+        df = df.drop(["new_name"], axis=1)
+        df.to_csv(os.path.join(csvpath, f"{args.model}-gendata-raw.csv"), index=False)
+    except pd.errors.EmptyDataError:
+        print("The file is empty. No data to load.")
+    except Exception as error:
+        print("An exception occurred:", error)
 
 
 if __name__ == "__main__":
