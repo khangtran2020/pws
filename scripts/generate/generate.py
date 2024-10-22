@@ -51,6 +51,10 @@ def run(args, filepath: str, csvpath: str):
                     )
                 )
 
+    if args.debug:
+        prompts = prompts[:10]
+        console.log(f"TEST PROMPT:\n {prompts[0]}")
+
     outputs = llm.generate(prompts, sampling_params)
     gen_text = []
     for output in outputs:
@@ -83,6 +87,9 @@ def run(args, filepath: str, csvpath: str):
                     )
                 )
 
+    if args.debug:
+        prompts = prompts[:10]
+        console.log(f"TEST PROMPT:\n {prompts[0]}")
     outputs = llm.generate(prompts, sampling_params)
     gen_text = []
     for output in outputs:
@@ -187,6 +194,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Args for generating data")
     parser.add_argument("--cwe", type=str, required=True, help="CWE to gen")
     parser.add_argument("--model", type=str, required=True, help="LLM gen")
+    parser.add_argument("--debug", type=int, required=True, help="debug or not")
+
     args = parser.parse_args()
     # make path for storing test file
     os.makedirs(f"./gen/cwe-{args.cwe}")
