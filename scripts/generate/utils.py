@@ -60,7 +60,7 @@ def post_gen(
                 debug=debug,
             )
             if debug:
-                console.log(f"TEXT:\n{text}\nQUALITY:{quality}")
+                # console.log(f"TEXT:\n{text}\nQUALITY:{quality}")
             if quality == "ok":
                 pass_data.append(text)
             else:
@@ -192,7 +192,8 @@ def quality_check(
     )
     r = p.stdout.read().decode("utf-8") + p.stderr.read().decode("utf-8")
     if debug:
-        print(r)
+        # print(r)
+        pass
 
     shutil.rmtree(os.path.join(filepath, f"{file_name.split('.')[0]}"))
     try:
