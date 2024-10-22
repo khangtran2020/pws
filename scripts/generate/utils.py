@@ -83,6 +83,8 @@ def post_gen(
                     tokenizer=tokenizer,
                 )
             )
+        if debug:
+            console.log("REDO PROMPT:\n" + new_prompts[0])
 
         org_prompt = deepcopy(org_prts)
         outputs = llm.generate(new_prompts, sampling_params)
