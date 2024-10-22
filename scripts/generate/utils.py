@@ -7,6 +7,7 @@ import subprocess
 import pandas as pd
 from typing import List
 from copy import deepcopy
+from console import console
 from transformers.tokenization_utils import PreTrainedTokenizer
 from template import construct_redo_gen_prompt
 
@@ -31,6 +32,7 @@ def post_gen(
     tokenizer: PreTrainedTokenizer,
     llm,
     sampling_params,
+    debug: bool,
 ):
 
     global_pass_data = []
@@ -48,6 +50,8 @@ def post_gen(
             quality = post_generation(
                 text=text, cwe=cwe, prop=prop, filepath=filepath, signatures=signatures
             )
+            if debug:
+                console.log(f"TEXT:\n{text}\nQUALITY:{quality}")
             if quality == "ok":
                 pass_data.append(text)
             else:
