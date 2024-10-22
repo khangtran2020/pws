@@ -60,6 +60,7 @@ def post_gen(
                 debug=debug,
             )
             if debug:
+                pass
                 # console.log(f"TEXT:\n{text}\nQUALITY:{quality}")
             if quality == "ok":
                 pass_data.append(text)
@@ -84,7 +85,9 @@ def post_gen(
                 )
             )
         if debug:
-            console.log("REDO PROMPT:\n" + new_prompts[0])
+            console.log(
+                "REDO PROMPT:\n" + new_prompts[0] + "\nFOR GEN TEXT:\n" + redo_data[0]
+            )
 
         org_prompt = deepcopy(org_prts)
         outputs = llm.generate(new_prompts, sampling_params)
