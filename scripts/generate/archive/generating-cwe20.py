@@ -63,7 +63,7 @@ funcs = [
     @app.route('redirect')
     def access(request):
         target = request.args.get('target', '')
-        target = urlparse(target)
+        target = urlparse(target).hostname
         if target and target.startswith("https://example.com/"):
             return redirect(target)
     """,
@@ -71,7 +71,7 @@ funcs = [
     @app.route('redirect')
     def access(target):
         target = request.data(target, '')
-        target = urlparse(target)
+        target = urlparse(target).hostname
         if target and target.startswith("https://example.com/"):
             return redirect(target)
     """,

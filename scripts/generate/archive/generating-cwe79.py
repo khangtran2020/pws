@@ -13,10 +13,11 @@ llm = LLM(model=model, dtype="float16", max_model_len=8192)
 funcs = [
     """
 from flask import Flask, request, make_response
-from jinja2 import FileSystemLoader
+from jinja2 import Environment, select_autoescape, FileSystemLoader, Template
 
 app = Flask(__name__)
-loader = FileSystemLoader( searchpath="templates/" )
+loader = FileSystemLoader(searchpath="loaders/")
+env = Environment(loader=loader)
 
 def render_response_from_env(env):
     name = request.args.get('name', '')
@@ -46,6 +47,8 @@ def home():
     return render_response_from_env(env)
 """,
     """
+from flask import jsonify
+    
 @app.route("/jsonify")
 def jsonify():
     data = request.data
