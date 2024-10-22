@@ -189,7 +189,7 @@ def quality_check(
     )
     r = p.stdout.read().decode("utf-8") + p.stderr.read().decode("utf-8")
     if debug:
-        console.log(r)
+        print(r)
 
     shutil.rmtree(os.path.join(filepath, f"{file_name.split('.')[0]}"))
     try:
