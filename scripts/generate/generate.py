@@ -4,7 +4,7 @@ import os
 print(os.path.abspath("../../../pws"))
 sys.path.append(os.path.abspath("../../../pws"))
 sys.path.append(os.path.abspath("../../../pws/scripts"))
-sys.path.append(os.path.abspath("../../../pws/generate"))
+sys.path.append(os.path.abspath("../../../pws/scripts/generate"))
 
 
 import ast
