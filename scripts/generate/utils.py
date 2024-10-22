@@ -171,14 +171,15 @@ def quality_check(
 
     # check codeql for matching prop
     file_name = generate_random_filename()
-    file_path = os.path.join(filepath, file_name)
+    os.makedirs(os.path.join(filepath, "temp"), exist_ok=True)
+    file_path = os.path.join(os.path.join(filepath, "temp"), file_name)
     with open(file_path, "w") as f:
         f.write(code)
 
     cmd = "codeql database create {} --language=python --overwrite --source-root {} --threads=32 && codeql database analyze {} $CODEQL_HOME/codeql-repo/python/ql/src/Security/CWE-0{}/ --format=csv --output={} --threads=32 --no-save-cache --ram=64000"
     cmd = cmd.format(
         os.path.join(filepath, f"{file_name.split('.')[0]}"),
-        file_path,
+        os.path.join(filepath, "temp"),
         os.path.join(filepath, f"{file_name.split('.')[0]}"),
         cwe,
         os.path.join(filepath, f"{file_name.split('.')[0]}.csv"),
