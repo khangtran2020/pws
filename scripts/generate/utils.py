@@ -21,6 +21,7 @@ ERROR_DICT = {
     "sign": "Not integrating the provided snippet",
     "vul4sec": "Not integrating the provided snippet",
     "sec4vul": "Not integrating the provided snippet",
+    "other": "unknown",
 }
 
 
@@ -120,7 +121,9 @@ def extract_substring_between_tags(text):
     return substring.strip()
 
 
-def quality_check(code: str, cwe: str, prop: str, filepath: str, signatures: List):
+def quality_check(
+    code: str, cwe: str, prop: str, filepath: str, signatures: List, debug: bool
+):
 
     # check code compilable & undefined variables
     try:
@@ -172,6 +175,8 @@ def quality_check(code: str, cwe: str, prop: str, filepath: str, signatures: Lis
         cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     r = p.stdout.read().decode("utf-8") + p.stderr.read().decode("utf-8")
+    if debug:
+        console.log(r)
 
     shutil.rmtree(os.path.join(filepath, f"{file_name.split('.')[0]}"))
     try:
@@ -188,7 +193,7 @@ def quality_check(code: str, cwe: str, prop: str, filepath: str, signatures: Lis
             return "sec4vul"
     except Exception as error:
         print("An exception occurred:", error)
-        return "sign"
+        return "other"
 
     os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
     return "ok"
