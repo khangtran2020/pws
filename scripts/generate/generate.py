@@ -107,6 +107,7 @@ def run(args, filepath: str, csvpath: str):
         sampling_params=sampling_params,
         filepath=filepath,
         signatures=signatures,
+        debug=args.debug,
     )
 
     vul_df = pd.DataFrame(

@@ -19,6 +19,8 @@ ERROR_DICT = {
     "undvar": "Containing underfined variables",
     "cnt": "Have less than 2 functions",
     "sign": "Not integrating the provided snippet",
+    "vul4sec": "Not integrating the provided snippet",
+    "sec4vul": "Not integrating the provided snippet",
 }
 
 
@@ -178,12 +180,12 @@ def quality_check(code: str, cwe: str, prop: str, filepath: str, signatures: Lis
         )
         if prop == "sec":
             os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
-            return "sign"
+            return "vul4sec"
     except pd.errors.EmptyDataError:
         print("The file is empty. No data to load.")
         if prop == "vul":
             os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
-            return "sign"
+            return "sec4vul"
     except Exception as error:
         print("An exception occurred:", error)
         return "sign"
