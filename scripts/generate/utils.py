@@ -51,7 +51,12 @@ def post_gen(
 
         for i, text in enumerate(gen_texts):
             quality = post_generation(
-                text=text, cwe=cwe, prop=prop, filepath=filepath, signatures=signatures
+                text=text,
+                cwe=cwe,
+                prop=prop,
+                filepath=filepath,
+                signatures=signatures,
+                debug=debug,
             )
             if debug:
                 console.log(f"TEXT:\n{text}\nQUALITY:{quality}")
@@ -88,14 +93,21 @@ def post_gen(
     return global_pass_data
 
 
-def post_generation(text: str, cwe: str, prop: str, filepath: str, signatures: List):
+def post_generation(
+    text: str, cwe: str, prop: str, filepath: str, signatures: List, debug: bool
+):
 
     code = extract_substring_between_tags(text=text)
     if code == "N/A":
         return "ext"
 
     return quality_check(
-        code=code, cwe=cwe, prop=prop, filepath=filepath, signatures=signatures
+        code=code,
+        cwe=cwe,
+        prop=prop,
+        filepath=filepath,
+        signatures=signatures,
+        debug=debug,
     )
 
 
