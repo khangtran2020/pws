@@ -60,8 +60,8 @@ def post_gen(
                 debug=debug,
             )
             if debug:
-                pass
-                # console.log(f"TEXT:\n{text}\nQUALITY:{quality}")
+                # pass
+                console.log(f"TEXT:\n{text}\nQUALITY:{quality}")
             if quality == "ok":
                 pass_data.append(text)
             else:
