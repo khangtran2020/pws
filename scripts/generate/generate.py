@@ -21,7 +21,9 @@ def run(args, filepath: str, csvpath: str):
 
     # init model
     model = MODEL_DICT[args.model]
-    llm = LLM(model=model, dtype="float16", max_model_len=8192)
+    llm = LLM(
+        model=model, dtype="float16", max_model_len=8192, gpu_memory_utilization=0.3
+    )
     tokenizer = llm.get_tokenizer()
     sampling_params = SamplingParams(temperature=0.2, top_p=0.95, max_tokens=1024)
 
