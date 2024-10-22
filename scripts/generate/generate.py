@@ -1,8 +1,8 @@
 import sys
 import os
 
-print(os.path.abspath("../../"))
-sys.path.append(os.path.abspath("../../"))
+print(os.path.abspath("../../../pws"))
+sys.path.append(os.path.abspath("../../../pws"))
 
 
 import ast
