@@ -8,7 +8,7 @@ import pandas as pd
 from typing import List
 from copy import deepcopy
 from transformers.tokenization_utils import PreTrainedTokenizer
-from scripts.generate.template import construct_redo_gen_prompt
+from template import construct_redo_gen_prompt
 
 
 ERROR_DICT = {
