@@ -1,12 +1,5 @@
 import sys
 import os
-
-print(os.path.abspath("../../../pws"))
-sys.path.append(os.path.abspath("../../../pws"))
-sys.path.append(os.path.abspath("../../../pws/scripts"))
-sys.path.append(os.path.abspath("../../../pws/scripts/generate"))
-
-
 import ast
 import json
 import argparse
@@ -15,9 +8,9 @@ import pandas as pd
 from tqdm import tqdm
 from typing import List
 from vllm import LLM, SamplingParams
-from scripts.utils.console import console
-from scripts.generate.template import construct_gen_prompt
-from scripts.generate.utils import post_gen, detect_scope
+from console import console
+from template import construct_gen_prompt
+from utils import post_gen, detect_scope
 
 MODEL_DICT = {
     "qwen15": "Qwen/CodeQwen1.5-7B-Chat",
