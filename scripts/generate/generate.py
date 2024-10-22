@@ -1,4 +1,9 @@
+import sys
 import os
+
+sys.path.append(os.path.abspath("../../"))
+
+
 import ast
 import json
 import argparse
