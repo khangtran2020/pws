@@ -53,7 +53,7 @@ def construct_gen_prompt(
     prompt = construct_prompt(text=text, tokenizer=tokenizer)
     prompt = (
         prompt
-        + "\nLet's think step-by-step to generate the source code satisfying the requirements:"
+        + "<|im_start|>assitant\nLet's think step-by-step to generate the source code satisfying the requirements:"
     )
     return prompt
 
