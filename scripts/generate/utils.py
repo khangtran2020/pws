@@ -50,6 +50,7 @@ def post_gen(
         error = []
 
         for i, text in enumerate(gen_texts):
+            text = text.replace("async def", "def")
             quality = post_generation(
                 text=text,
                 cwe=cwe,
