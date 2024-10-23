@@ -235,7 +235,7 @@ def run_pylint_for_undefined_variables(file_path):
         return -1
 
 
-def generate_random_filename(extension="py", length=8):
+def generate_random_filename(extension="py", length=32):
     characters = string.ascii_letters + string.digits
     random_string = "".join(random.choice(characters) for _ in range(length))
     filename = f"{random_string}.{extension}"
