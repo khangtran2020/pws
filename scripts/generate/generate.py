@@ -89,7 +89,7 @@ def run(args, filepath: str, csvpath: str):
                         snippet=func, task=task, package=package, tokenizer=tokenizer
                     )
                 )
-
+    print("PROMPTS:\n", prompts)
     if args.debug:
         prompts = prompts[:10]
         console.log(f"TEST PROMPT:\n {prompts[0]}")
