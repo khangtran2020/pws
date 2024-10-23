@@ -15,6 +15,7 @@ from utils import post_gen, detect_scope
 MODEL_DICT = {
     "qwen15": "Qwen/CodeQwen1.5-7B-Chat",
     "qwen25": "Qwen/Qwen2.5-Coder-7B-Instruct",
+    "deepseek33": "deepseek-ai/deepseek-coder-33b-instruct",
 }
 
 
