@@ -62,10 +62,10 @@
         },
         "89": {
             "vulnerable": [
-                "@app.route(\"/find\")\ndef find_item(item_name):\n    cursor.execute(\"SELECT * FROM items WHERE item_name = \" + str(item_name))\n    item = cursor.fetchall()\n    return item",
-                "@app.route(\"/find\")\ndef find_item():\n    item_name = request.args.get(\"item\")\n    cursor.execute(\"SELECT * FROM items WHERE item_name = {}\".format(item_name))\n    item = cursor.fetchall()\n    return item",
-                "@app.route(\"/find\")\ndef find_item(request):\n    item_name = request.args.get(\"item\")\n    cursor.execute(f\"SELECT * FROM items WHERE item_name = {item_name}\")\n    item = cursor.fetchall()\n    return item",
-                "@app.route(\"/find\")\ndef find_item(item_name):\n    item_ = request.args.get(item_name)\n    cursor.execute(\"SELECT * FROM items WHERE item_name = '%s'\" % item_)\n    item = cursor.fetchall()\n    return item"
+                "cursor.execute(\"SELECT * FROM items WHERE item_name = \" + str(item_name))",
+                "cursor.execute(\"SELECT * FROM items WHERE item_name = {}\".format(item_name))",
+                "cursor.execute(f\"SELECT * FROM items WHERE item_name = {item_name}\")",
+                "cursor.execute(\"SELECT * FROM items WHERE item_name = '%s'\" % item_)"
             ],
             "secure": [
                 "@app.route(\"/find\")\ndef find_item(item_name):\n    cursor.execute(\"SELECT * FROM items WHERE item_name = %s\", item_name)\n    item = cursor.fetchall()\n    return item",
