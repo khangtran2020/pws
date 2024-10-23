@@ -78,7 +78,6 @@
     },
     "packages": ["Flask", "FastAPI", "Django", "Tornado", "Twisted", "aiohttp"],
     "tasks": [
-        "Medical Image Processing: Running image processing algorithms on medical images such as MRI scans, X-rays, or CT scans.",
         "Healthcare Data Backup: Creating backups of healthcare data stored in databases, ensuring data integrity and availability.",
         "Healthcare Data Migration: Migrating healthcare data from one system or database to another while ensuring data consistency and completeness.",
         "Healthcare Data Export: Exporting healthcare data in standardized formats for regulatory compliance or interoperability with other systems.",
