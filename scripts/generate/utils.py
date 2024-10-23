@@ -51,7 +51,7 @@ def post_gen(
 
         for i, text in enumerate(gen_texts):
             text = text.replace("async def", "def")
-            quality = post_generation(
+            code, quality = post_generation(
                 text=text,
                 cwe=cwe,
                 prop=prop,
@@ -62,7 +62,7 @@ def post_gen(
             if debug:
                 pass
                 if quality == "sec4vul":
-                    console.log(f"TEXT:{text}")
+                    console.log(f"CODE:{code}")
                 console.log(f"QUALITY:{quality}")
             if quality == "ok":
                 pass_data.append(text)
@@ -108,9 +108,9 @@ def post_generation(
 
     code = extract_substring_between_tags(text=text)
     if code == "N/A":
-        return "ext"
+        return code, "ext"
 
-    return quality_check(
+    return code, quality_check(
         code=code,
         cwe=cwe,
         prop=prop,
