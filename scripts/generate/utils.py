@@ -206,7 +206,6 @@ def quality_check(
         )
         os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
         if prop == "sec":
-            os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
             return "vul4sec"
     except pd.errors.EmptyDataError:
         print("The file is empty. No data to load.")
