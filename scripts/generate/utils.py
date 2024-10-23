@@ -220,8 +220,9 @@ def quality_check(
     if debug:
         # print(r)
         pass
-
     shutil.rmtree(os.path.join(filepath, f"{file_name.split('.')[0]}"))
+    shutil.rmtree(os.path.join(filepath, "temp"))
+
     try:
         df = pd.read_csv(
             os.path.join(filepath, f"{file_name.split('.')[0]}.csv"), header=None
@@ -238,7 +239,6 @@ def quality_check(
         print("An exception occurred:", error)
         os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
         return "other"
-    shutil.rmtree(os.path.join(filepath, "temp"))
     return "ok"
 
 
