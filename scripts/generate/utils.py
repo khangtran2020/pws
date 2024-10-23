@@ -55,7 +55,7 @@ def post_gen(
     org_prompt = deepcopy(prompts)
     gen_texts = deepcopy(texts)
 
-    for num_try in range(5):
+    for num_try in range(3):
 
         pass_data = []
         redo_data = []
