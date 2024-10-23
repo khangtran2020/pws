@@ -197,11 +197,11 @@ def run(args, filepath: str, csvpath: str):
             .reset_index(drop=True)
         )
         df = df.drop(["new_name"], axis=1)
-        df.to_csv(os.path.join(csvpath, f"{args.model}-gendata-raw.csv"), index=False)
     except pd.errors.EmptyDataError:
         print("The file is empty. No data to load.")
     except Exception as error:
         print("An exception occurred:", error)
+    df.to_csv(os.path.join(csvpath, f"{args.model}-gendata-raw.csv"), index=False)
 
 
 if __name__ == "__main__":
