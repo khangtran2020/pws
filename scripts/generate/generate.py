@@ -122,7 +122,7 @@ def run(args, filepath: str, csvpath: str):
     for i in range(df.shape[0]):
         path = df.at[i, "path"]
         code = df.at[i, "code"]
-        with open(path, "r") as f:
+        with open(path, "w") as f:
             f.write(code)
 
     cmd = "codeql database create {} --language=python --overwrite --source-root {} --threads=32 && codeql database analyze {} $CODEQL_HOME/codeql-repo/python/ql/src/Security/CWE-0{}/ --format=csv --output={} --threads=32 --no-save-cache --ram=64000"

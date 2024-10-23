@@ -204,19 +204,20 @@ def quality_check(
         df = pd.read_csv(
             os.path.join(filepath, f"{file_name.split('.')[0]}.csv"), header=None
         )
+        os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
         if prop == "sec":
             os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
             return "vul4sec"
     except pd.errors.EmptyDataError:
         print("The file is empty. No data to load.")
+        os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
         if prop == "vul":
-            os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
             return "sec4vul"
     except Exception as error:
         print("An exception occurred:", error)
+        os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
         return "other"
-
-    os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
+    shutil.rmtree(os.path.join(filepath, "temp"))
     return "ok"
 
 
