@@ -27,7 +27,7 @@ def run(args, filepath: str, csvpath: str):
         model=model, dtype="float16", max_model_len=8192, gpu_memory_utilization=0.9
     )
     tokenizer = llm.get_tokenizer()
-    sampling_params = SamplingParams(temperature=0.02, top_p=0.95, max_tokens=1024)
+    sampling_params = SamplingParams(temperature=0.7, top_p=0.95, max_tokens=1024)
 
     # read meta data
     with open("data_component.json", "r") as file:
