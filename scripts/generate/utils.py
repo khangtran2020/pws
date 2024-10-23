@@ -61,6 +61,8 @@ def post_gen(
             )
             if debug:
                 pass
+                if quality == "sec4vul":
+                    console.log(f"TEXT:{text}")
                 console.log(f"QUALITY:{quality}")
             if quality == "ok":
                 pass_data.append(text)
