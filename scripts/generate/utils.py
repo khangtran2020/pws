@@ -83,9 +83,9 @@ def post_gen(
                     console.log(f"CODE:{code}")
                 console.log(f"QUALITY:{quality}")
             if quality == "ok":
-                pass_data.append(text)
+                pass_data.append(code)
             else:
-                redo_data.append(text)
+                redo_data.append(code)
                 org_prts.append(org_prompt[i])
                 error.append(ERROR_DICT[quality])
                 solutions.append(SOLUTION_DICT[quality])
