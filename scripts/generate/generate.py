@@ -78,7 +78,7 @@ def run(args, filepath: str, csvpath: str):
     # sec_df = pd.DataFrame(
     #     {"uuid": list(range(len(sec_gen_data))), "label": 0, "code": sec_gen_data}
     # )
-
+    console.log(f"Vul functions: {vul_func}")
     # Generate vulnerable codes
     prompts = []
     for func in vul_func:
