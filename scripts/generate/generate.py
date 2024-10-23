@@ -216,16 +216,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     # make path for storing test file
-    if args.debug:
-        os.makedirs(f"./gen/cwe-{args.cwe}", exist_ok=True)
-        file_path = os.path.join(f"./gen/cwe-{args.cwe}", "code")
-        csv_path = os.path.join(f"./gen/cwe-{args.cwe}")
-        os.makedirs(file_path, exist_ok=True)
-        os.makedirs(csv_path, exist_ok=True)
-    else:
-        os.makedirs(f"./gen/cwe-{args.cwe}", exist_ok=False)
-        file_path = os.path.join(f"./gen/cwe-{args.cwe}", "code")
-        csv_path = os.path.join(f"./gen/cwe-{args.cwe}")
-        os.makedirs(file_path, exist_ok=False)
-        os.makedirs(csv_path, exist_ok=False)
+    # if args.debug:
+    os.makedirs(f"./gen/cwe-{args.cwe}", exist_ok=True)
+    file_path = os.path.join(f"./gen/cwe-{args.cwe}", "code")
+    csv_path = os.path.join(f"./gen/cwe-{args.cwe}")
+    os.makedirs(file_path, exist_ok=True)
+    os.makedirs(csv_path, exist_ok=True)
+    # else:
+    #     os.makedirs(f"./gen/cwe-{args.cwe}", exist_ok=False)
+    #     file_path = os.path.join(f"./gen/cwe-{args.cwe}", "code")
+    #     csv_path = os.path.join(f"./gen/cwe-{args.cwe}")
+    #     os.makedirs(file_path, exist_ok=False)
+    #     os.makedirs(csv_path, exist_ok=False)
     run(args=args, filepath=file_path, csvpath=csv_path)
