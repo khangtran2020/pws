@@ -13,15 +13,15 @@ from template import construct_redo_gen_prompt
 
 
 ERROR_DICT = {
-    "ext": """Cannot extract code from response, please put the code between "```python" and "```" tags""",
-    "syntax": "Syntax Error, cannot parsed by ast",
-    "syntax_lint": "Syntax Error, cannot parsed by pylint",
-    "undvar": "Containing underfined variables",
-    "cnt": "Have less than 2 functions",
-    "sign": "Not integrating the provided snippet",
-    "vul4sec": "Not integrating the provided snippet",
-    "sec4vul": "Not integrating the provided snippet",
-    "other": "unknown",
+    "ext": """Cannot extract code from response. Please ensure the code is placed between "```python" and "```" tags. Wrap your code snippet with these tags so it can be parsed properly.""",
+    "syntax": """Syntax Error: Cannot be parsed by AST. Check your code for any syntax issues such as missing colons, mismatched parentheses, or invalid variable names. Ensure that the code is valid Python.""",
+    "syntax_lint": """Syntax Error: Cannot be parsed by Pylint. Check your code for PEP8 compliance, missing imports, indentation errors, and other structural issues. Use a linter or run 'pylint' to identify and fix errors.""",
+    "undvar": """Containing undefined variables. Check your code to ensure that all variables used are properly defined before use. Ensure that you are not using variables that are out of scope or mistyped.""",
+    "cnt": """Have less than 2 functions. Ensure that your code contains at least two function definitions. Break down your logic into separate functions if necessary to meet this requirement.""",
+    "sign": """Not integrating the provided snippet. Ensure that the provided code snippet is included and integrated correctly into your solution. Review the given snippet and incorporate it properly.""",
+    "vul4sec": """Not integrating the provided snippet. Ensure that the provided code integrated properly and used as intended in your code.""",
+    "sec4vul": """Not integrating the provided snippet. Ensure that the provided code snippet is properly integrated into your solution and covers all necessary vulnerabilities.""",
+    "other": "Unknown error. Review the error message and context to troubleshoot. If the issue persists, seek further help or provide more details about the problem.",
 }
 
 

@@ -39,7 +39,7 @@ def construct_redo_gen_prompt(
     )
     prompt = (
         prompt
-        + "<|im_start|>assitant\nLet's do exactly as required  to generate the source code satisfying all requirements:"
+        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
     )
     return prompt
 
