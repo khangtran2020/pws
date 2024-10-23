@@ -193,7 +193,7 @@ def run(args, filepath: str, csvpath: str):
         update_df = update_df.merge(res_df, left_on="sample_name", right_on="new_name")
         df = (
             pd.concat([non_update_df, update_df], axis=0)
-            .sort_values("id")
+            .sort_values("uuid")
             .reset_index(drop=True)
         )
         df = df.drop(["new_name"], axis=1)
@@ -203,6 +203,7 @@ def run(args, filepath: str, csvpath: str):
         print("An exception occurred:", error)
 
     df.to_csv(os.path.join(csvpath, f"{args.model}-gendata-raw.csv"), index=False)
+    console.log(f"Done generating: {df.shape[0]} data points.")
 
 
 if __name__ == "__main__":
