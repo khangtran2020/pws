@@ -24,7 +24,7 @@ def run(args, filepath: str, csvpath: str):
     # init model
     model = MODEL_DICT[args.model]
     llm = LLM(
-        model=model, dtype="float16", max_model_len=8192, gpu_memory_utilization=0.9
+        model=model, dtype="float16", max_model_len=8192, gpu_memory_utilization=0.3
     )
     tokenizer = llm.get_tokenizer()
     temperature = 0.2
