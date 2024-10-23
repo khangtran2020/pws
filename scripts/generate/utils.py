@@ -10,7 +10,7 @@ from copy import deepcopy
 from console import console
 from transformers.tokenization_utils import PreTrainedTokenizer
 from template import construct_redo_gen_prompt
-
+from vllm import SamplingParams
 
 ERROR_DICT = {
     "ext": """Cannot extract code from response, please put the code between "```python" and " ```" tags""",
@@ -36,6 +36,7 @@ def post_gen(
     llm,
     sampling_params,
     debug: bool,
+    temperature: float,
 ):
 
     global_pass_data = []
@@ -48,6 +49,11 @@ def post_gen(
         redo_data = []
         org_prts = []
         error = []
+
+        temp = deepcopy(temperature)
+        sampling_params_ = SamplingParams(
+            temperature=temp + 1e-3, top_p=0.95, max_tokens=1024
+        )
 
         for i, text in enumerate(gen_texts):
             text = text.replace("async def", "def")
@@ -93,7 +99,7 @@ def post_gen(
             pass
 
         org_prompt = deepcopy(org_prts)
-        outputs = llm.generate(new_prompts, sampling_params)
+        outputs = llm.generate(new_prompts, sampling_params_)
         gen_text = []
         for output in outputs:
             gen_text.append(output.outputs[0].text)
