@@ -68,10 +68,10 @@
                 "query=\"SELECT * FROM target_table, related_table WHERE target_vars = '%s'\"\ncursor.execute( query % input_from_user)"
             ],
             "secure": [
-                "@app.route(\"/find\")\ndef find_item(item_name):\n    cursor.execute(\"SELECT * FROM items WHERE item_name = %s\", item_name)\n    item = cursor.fetchall()\n    return item",
-                "@app.route(\"/find\")\ndef find_item():\n    item_name = request.args.get(\"item\")\n    cursor.execute(\"SELECT * FROM items WHERE item_name = %s\", item_name)\n    item = cursor.fetchall()\n    return item",
-                "@app.route(\"/find\")\ndef find_item(request):\n    item_name = request.args.get(\"item\")\n    cursor.execute(\"SELECT * FROM items WHERE item_name = %s\", (item_name,))\n    item = cursor.fetchall()\n    return item",
-                "@app.route(\"/find\")\ndef find_item(item_name):\n    item_ = request.args.get(item_name)\n    cursor.execute(\"SELECT * FROM items WHERE item_name = %s\", item_)\n    item = cursor.fetchall()\n    return item"
+                "@app.route(\"/find\")\ndef find_item(input_from_user):\n    cursor.execute(\"SELECT * FROM target_table, related_table WHERE target_vars = %s\", input_from_user)\n    item = cursor.fetchall()\n    return item",
+                "@app.route(\"/find\")\ndef find_item():\n    input_from_user = request.args.get(\"input\")\n    cursor.execute(\"SELECT * FROM target_table, related_table WHERE target_vars = %s\", input_from_user)\n    item = cursor.fetchall()\n    return item",
+                "@app.route(\"/find\")\ndef find_item(request):\n    input_from_user = request.args.get(\"input\")\n    cursor.execute(\"SELECT * FROM target_table, related_table WHERE target_vars = %s\", (input_from_user,))\n    item = cursor.fetchall()\n    return item",
+                "@app.route(\"/find\")\ndef find_item(input_from_user):\n    item_ = request.args.get(input_from_user)\n    cursor.execute(\"SELECT * FROM target_table, related_table WHERE target_vars = %s\", item_)\n    item = cursor.fetchall()\n    return item"
             ],
             "signature": [".execute(", "SELECT"]
         }
