@@ -24,6 +24,18 @@ ERROR_DICT = {
     "other": "unknown",
 }
 
+SOLUTION_DICT = {
+    "ext": """Ensure that you enclose your code between "```python" and "```" tags. This is required for proper extraction and parsing of the code.""",
+    "syntax": """Check for syntax errors such as missing colons, unmatched parentheses, or invalid variable names. Use tools like Python's built-in `pylint` or an IDE to highlight syntax issues.""",
+    "syntax_lint": """Run `pylint` or similar linters on your code to identify PEP8 violations, indentation problems, missing imports, or any other structural issues. Make sure your code follows standard Python practices.""",
+    "undvar": """Make sure all variables used in your code are properly defined and initialized before being used. Check for typos or cases where variables might go out of scope.""",
+    "cnt": """Ensure your code has at least two functions. Refactor your logic to break it into functions if you have only one function, or add meaningful functions to your code.""",
+    "sign": """Ensure that the provided code snippet is properly integrated into your solution. Review the snippet and merge it into the main logic as needed.""",
+    "vul4sec": """Make sure the provided vulnerability-related snippet is correctly integrated into the code. Ensure that the relevant part of the snippet addresses the security concerns outlined in the task.""",
+    "sec4vul": """Integrate the security snippet properly to mitigate vulnerabilities in your code. Ensure that it is aligned with the requirements for addressing the specified vulnerabilities.""",
+    "other": """For unknown errors, review the code thoroughly for potential issues or provide more information about the error to troubleshoot further.""",
+}
+
 
 def post_gen(
     texts: List,
@@ -49,6 +61,7 @@ def post_gen(
         redo_data = []
         org_prts = []
         error = []
+        solutions = []
 
         temp = deepcopy(temperature)
         sampling_params_ = SamplingParams(
@@ -66,7 +79,6 @@ def post_gen(
                 debug=debug,
             )
             if debug:
-                pass
                 if quality == "sec4vul":
                     console.log(f"CODE:{code}")
                 console.log(f"QUALITY:{quality}")
@@ -76,6 +88,7 @@ def post_gen(
                 redo_data.append(text)
                 org_prts.append(org_prompt[i])
                 error.append(ERROR_DICT[quality])
+                solutions.append(SOLUTION_DICT[quality])
 
         global_pass_data += pass_data
 
@@ -89,6 +102,7 @@ def post_gen(
                     org_prompt=org_prts[i],
                     response=redo_data[i],
                     error=error[i],
+                    sol=solutions[i],
                     tokenizer=tokenizer,
                 )
             )

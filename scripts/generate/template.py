@@ -25,15 +25,18 @@ The program's source code must satisfy the REQUIREMENT.
 
 REGEN_TEMP = """
 ### Instruction: Given the instruction in the previous user's prompt and your response.
-Your does not satisfy the user's requirements because: {}
-Refactor your response to satisfy the user's requirements.
+Your does not satisfy the user's requirements because: {}.
+Refactor your response to satisfy the user's requirements based on the following SOLUTION
+
+### SOLUTION:
+{}
 """
 
 
 def construct_redo_gen_prompt(
-    org_prompt: str, response: str, error: str, tokenizer: PreTrainedTokenizer
+    org_prompt: str, response: str, error: str, sol: str, tokenizer: PreTrainedTokenizer
 ):
-    text = REGEN_TEMP.format(error)
+    text = REGEN_TEMP.format(error, sol)
     prompt = construct_redo_prompt(
         text=org_prompt, assitant_text=response, new_text=text, tokenizer=tokenizer
     )
