@@ -57,7 +57,7 @@ def run(args, filepath: str, csvpath: str):
                 )
 
     if args.debug:
-        prompts = prompts[:10]
+        prompts = prompts[:30]
         console.log(f"TEST PROMPT:\n {prompts[0]}")
 
     outputs = llm.generate(prompts, sampling_params)
@@ -95,7 +95,7 @@ def run(args, filepath: str, csvpath: str):
                 )
     # print("PROMPTS:\n")
     if args.debug:
-        prompts = prompts[:10]
+        prompts = prompts[:30]
         console.log(f"TEST PROMPT:\n {prompts[0]}")
     outputs = llm.generate(prompts, sampling_params)
     gen_text = []
