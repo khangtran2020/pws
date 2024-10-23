@@ -62,10 +62,10 @@
         },
         "89": {
             "vulnerable": [
-                "cursor.execute(\"SELECT * FROM items WHERE item_name = \" + str(item_name))",
-                "cursor.execute(\"SELECT * FROM items WHERE item_name = {}\".format(item_name))",
-                "cursor.execute(f\"SELECT * FROM items WHERE item_name = {item_name}\")",
-                "cursor.execute(\"SELECT * FROM items WHERE item_name = '%s'\" % item_)"
+                "cursor.execute(\"SELECT * FROM items WHERE item_name = \" + str(item_name))\n    item = cursor.fetchall()\n    return item",
+                "cursor.execute(\"SELECT * FROM items WHERE item_name = {}\".format(item_name))\n    item = cursor.fetchall()\n    return item",
+                "cursor.execute(f\"SELECT * FROM items WHERE item_name = {item_name}\")\n    item = cursor.fetchall()\n    return item",
+                "item_ = request.args.get(\"item_name\")\ncursor.execute(\"SELECT * FROM items WHERE item_name = '%s'\" % item_)"
             ],
             "secure": [
                 "@app.route(\"/find\")\ndef find_item(item_name):\n    cursor.execute(\"SELECT * FROM items WHERE item_name = %s\", item_name)\n    item = cursor.fetchall()\n    return item",

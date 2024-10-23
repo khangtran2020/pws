@@ -39,7 +39,7 @@ def construct_redo_gen_prompt(
     )
     prompt = (
         prompt
-        + "<|im_start|>assitant\nLet's think step-by-step to generate the source code satisfying all requirements:"
+        + "<|im_start|>assitant\nLet's do exactly as required  to generate the source code satisfying all requirements:"
     )
     return prompt
 
@@ -53,7 +53,7 @@ def construct_gen_prompt(
     prompt = construct_prompt(text=text, tokenizer=tokenizer)
     prompt = (
         prompt
-        + "<|im_start|>assitant\nLet's think step-by-step to generate the source code satisfying the requirements:"
+        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
     )
     return prompt
 
