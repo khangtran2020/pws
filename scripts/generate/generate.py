@@ -81,7 +81,7 @@ def run(args, filepath: str, csvpath: str):
 
     # Generate vulnerable codes
     prompts = []
-    for func in sec_func:
+    for func in vul_func:
         for task in tasks:
             for package in packages:
                 prompts.append(
