@@ -66,7 +66,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         gen_text.append(output.outputs[0].text)
 
     gen_df = pd.DataFrame(
-        {"uuid": list(range(gen_text)), "prompt": prompts, "text": gen_text}
+        {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
     )
 
     gen_df.to_csv(
@@ -107,7 +107,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         gen_text.append(output.outputs[0].text)
 
     gen_df = pd.DataFrame(
-        {"uuid": list(range(gen_text)), "prompt": prompts, "text": gen_text}
+        {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
     )
     gen_df.to_csv(
         os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_vul.csv"), index=False
