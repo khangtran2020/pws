@@ -161,6 +161,13 @@ def post_gen(
         )
 
         if df_error.shape[0] == 0:
+            # save
+            df_res.to_csv(
+                os.path.join(
+                    savepath, f"save_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"
+                ),
+                index=False,
+            )
             break
 
         new_prompts = []
