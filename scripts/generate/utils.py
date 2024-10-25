@@ -74,6 +74,8 @@ def post_gen(
         temp_path = []
         temp_name = []
         codepath = os.path.join(filepath, "temp")
+        if os.path.exists(codepath):
+            shutil.rmtree(codepath)
         os.makedirs(name=codepath)
         for i in range(df_sim_good.shape[0]):
             temp_name.append(f"sample_{i}.py")
