@@ -10,7 +10,7 @@ from typing import List
 from vllm import LLM, SamplingParams
 from console import console
 from template import construct_gen_prompt
-from utils import post_gen, detect_scope
+from utils import post_gen, run_codeql
 
 MODEL_DICT = {
     "qwen15": "Qwen/CodeQwen1.5-7B-Chat",
@@ -19,7 +19,7 @@ MODEL_DICT = {
 }
 
 
-def run(args, filepath: str, csvpath: str):
+def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
 
     # init model
     model = MODEL_DICT[args.model]
@@ -65,23 +65,27 @@ def run(args, filepath: str, csvpath: str):
     for output in outputs:
         gen_text.append(output.outputs[0].text)
 
-    sec_gen_data = post_gen(
-        texts=gen_text,
-        prompts=prompts,
+    gen_df = pd.DataFrame(
+        {"uuid": list(range(gen_text)), "prompt": prompts, "text": gen_text}
+    )
+
+    gen_df.to_csv(
+        os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_sec.csv"), index=False
+    )
+    sec_df = post_gen(
+        df=gen_df,
         cwe=args.cwe,
         prop="sec",
         tokenizer=tokenizer,
         llm=llm,
         sampling_params=sampling_params,
         filepath=filepath,
+        savepath=savepath,
         signatures=signatures,
         debug=args.debug,
         temperature=temperature,
     )
-
-    sec_df = pd.DataFrame(
-        {"uuid": list(range(len(sec_gen_data))), "label": 0, "code": sec_gen_data}
-    )
+    sec_df["label"] = 0
 
     # Generate vulnerable codes
     prompts = []
@@ -102,27 +106,32 @@ def run(args, filepath: str, csvpath: str):
     for output in outputs:
         gen_text.append(output.outputs[0].text)
 
-    vul_gen_data = post_gen(
-        texts=gen_text,
-        prompts=prompts,
+    gen_df = pd.DataFrame(
+        {"uuid": list(range(gen_text)), "prompt": prompts, "text": gen_text}
+    )
+    gen_df.to_csv(
+        os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_vul.csv"), index=False
+    )
+
+    vul_df = post_gen(
+        df=gen_df,
         cwe=args.cwe,
         prop="vul",
         tokenizer=tokenizer,
         llm=llm,
         sampling_params=sampling_params,
         filepath=filepath,
+        savepath=savepath,
         signatures=signatures,
         debug=args.debug,
         temperature=temperature,
     )
-
-    vul_df = pd.DataFrame(
-        {"uuid": list(range(len(vul_gen_data))), "label": 1, "code": vul_gen_data}
-    )
+    vul_df["label"] = 1
 
     df = pd.concat([sec_df, vul_df], axis=0).reset_index(drop=True)
+    df["uuid"] = list(range(df.shape[0]))
     df["sample_name"] = df["uuid"].apply(lambda x: f"{args.model}-gen-sample-{x}.py")
-    df["path"] = df["sample_name"].apply(lambda x: os.path.join(filepath, x))
+    df["path"] = df["sample_name"].apply(lambda x: os.path.join(codepath, x))
 
     for i in range(df.shape[0]):
         path = df.at[i, "path"]
@@ -130,77 +139,35 @@ def run(args, filepath: str, csvpath: str):
         with open(path, "w") as f:
             f.write(code)
 
-    cmd = "codeql database create {} --language=python --overwrite --source-root {} --threads=32 && codeql database analyze {} $CODEQL_HOME/codeql-repo/python/ql/src/Security/CWE-0{}/ --format=csv --output={} --threads=32 --no-save-cache --ram=64000"
-    cmd = cmd.format(
-        os.path.join(csvpath, f"cqldb"),
-        filepath,
-        os.path.join(csvpath, f"cqldb"),
-        args.cwe,
-        os.path.join(csvpath, f"cqlres-cwe{args.cwe}.csv"),
-    )
-
-    p = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    r = p.stdout.read().decode("utf-8") + p.stderr.read().decode("utf-8")
-
-    try:
-        df_res = pd.read_csv(
-            os.path.join(csvpath, f"cqlres-cwe{args.cwe}.csv"), header=None
-        )
-        df_res.columns = [f"Col_{i}" for i in range(df_res.shape[1])]
-        df_res["Col_4"] = df_res["Col_4"].apply(lambda x: x[1:])
-
-        temp_uuid = []
-        vul_func = []
-        df_res = df_res.groupby("Col_4")["Col_5"].apply(list)
-        for key, item in zip(df_res.index, df_res):
-            funcs = ""
-            with open(os.path.join(filepath, key), "r") as f:
-                codes = f.read()
-                for index in item:
-                    funcs += f"|{detect_scope(code=codes, line_number=index)}"
-            if key in temp_uuid:
-                idx = temp_uuid.index(key)
-                if len(funcs[1:]) > len(vul_func[idx]):
-                    vul_func[idx] = funcs[1:]
-            else:
-                temp_uuid.append(key)
-                vul_func.append(funcs[1:])
-
+    res_df = run_codeql(filepath=filepath, cwe=args.cwe, codepath=codepath, check=True)
+    if res_df is None:
+        console.log("No vulnerable data in total")
+    else:
         df["final_label"] = 0
         df["vul_func"] = "N/A"
 
-        res_df = pd.DataFrame({"new_name": temp_uuid, "vul_func": vul_func})
-        res_df["final_label"] = 1
-        res_df = res_df.reset_index(drop=True)
-
-        if res_df["new_name"].duplicated().sum() > 0:
+        if res_df["new_uuid"].duplicated().sum() > 0:
             print(res_df.head())
 
         update_df = (
-            df.loc[df["sample_name"].isin(res_df["new_name"])]
+            df.loc[df["sample_name"].isin(res_df["new_uuid"])]
             .copy()
             .reset_index(drop=True)
         )
 
         non_update_df = (
-            df.loc[df["sample_name"].isin(res_df["new_name"]) == False]
+            df.loc[df["sample_name"].isin(res_df["new_uuid"]) == False]
             .copy()
             .reset_index(drop=True)
         )
         update_df = update_df.drop(["final_label", "vul_func"], axis=1)
-        update_df = update_df.merge(res_df, left_on="sample_name", right_on="new_name")
+        update_df = update_df.merge(res_df, left_on="sample_name", right_on="new_uuid")
         df = (
             pd.concat([non_update_df, update_df], axis=0)
             .sort_values("uuid")
             .reset_index(drop=True)
         )
-        df = df.drop(["new_name"], axis=1)
-    except pd.errors.EmptyDataError:
-        print("The file is empty. No data to load.")
-    except Exception as error:
-        print("An exception occurred:", error)
+        df = df.drop(["new_uuid"], axis=1)
 
     df.to_csv(os.path.join(csvpath, f"{args.model}-gendata-raw.csv"), index=False)
     console.log(f"Done generating: {df.shape[0]} data points.")
@@ -218,14 +185,24 @@ if __name__ == "__main__":
     # make path for storing test file
     # if args.debug:
     os.makedirs(f"./gen/cwe-{args.cwe}", exist_ok=True)
-    file_path = os.path.join(f"./gen/cwe-{args.cwe}", "code")
-    csv_path = os.path.join(f"./gen/cwe-{args.cwe}")
+    file_path = f"./gen/cwe-{args.cwe}"
+    csv_path = f"./gen/cwe-{args.cwe}"
+    code_path = os.path.join(f"./gen/cwe-{args.cwe}", "code")
+    save_path = os.path.join(f"./gen/cwe-{args.cwe}", "save")
     os.makedirs(file_path, exist_ok=True)
     os.makedirs(csv_path, exist_ok=True)
+    os.makedirs(code_path, exist_ok=True)
+    os.makedirs(save_path, exist_ok=True)
     # else:
     #     os.makedirs(f"./gen/cwe-{args.cwe}", exist_ok=False)
     #     file_path = os.path.join(f"./gen/cwe-{args.cwe}", "code")
     #     csv_path = os.path.join(f"./gen/cwe-{args.cwe}")
     #     os.makedirs(file_path, exist_ok=False)
     #     os.makedirs(csv_path, exist_ok=False)
-    run(args=args, filepath=file_path, csvpath=csv_path)
+    run(
+        args=args,
+        filepath=file_path,
+        csvpath=csv_path,
+        savepath=save_path,
+        codepath=code_path,
+    )

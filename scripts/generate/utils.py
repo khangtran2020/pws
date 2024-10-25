@@ -8,6 +8,8 @@ import pandas as pd
 from typing import List
 from copy import deepcopy
 from console import console
+from functools import partial
+from pandarallel import pandarallel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from template import construct_redo_gen_prompt
 from vllm import SamplingParams
@@ -38,71 +40,135 @@ SOLUTION_DICT = {
 
 
 def post_gen(
-    texts: List,
-    prompts: List,
+    df: pd.DataFrame,
     cwe: str,
     prop: str,
     filepath: str,
+    savepath: str,
     signatures: List,
     tokenizer: PreTrainedTokenizer,
     llm,
-    sampling_params,
     debug: bool,
     temperature: float,
 ):
 
-    global_pass_data = []
-    org_prompt = deepcopy(prompts)
-    gen_texts = deepcopy(texts)
+    pandarallel.initialize(progress_bar=True, nb_workers=16)
+    df_res = None
+    df_tem = df.copy()
 
     for num_try in range(3):
 
-        pass_data = []
-        redo_data = []
-        org_prts = []
-        error = []
-        solutions = []
+        df_tem["code"] = df_tem["text"].apply(lambda x: extract_code(x))
+        df_tem["quality_sim"] = df_tem["code"].apply(
+            lambda x: quality_check_simple(code=x, signatures=signatures)
+        )
 
+        df_sim_good = (
+            df_tem.loc[df_tem["quality_sim"] == "ok"].copy().reset_index(drop=True)
+        )
+        df_sim_bad = (
+            df_tem.loc[df_tem["quality_sim"] != "ok"].copy().reset_index(drop=True)
+        )
+
+        # run pylint
+        temp_path = []
+        temp_name = []
+        codepath = os.path.join(filepath, "temp")
+        os.makedirs(name=codepath)
+        for i in range(df_sim_good.shape[0]):
+            temp_name.append(f"sample_{i}.py")
+            temp_path.append(os.path.join(codepath, f"sample_{i}.py"))
+            with open(os.path.join(codepath, f"sample_{i}.py"), "w") as f:
+                f.write(df_sim_good.at[i, "code"])
+
+        df_sim_good["temp_path"] = temp_path
+        df_sim_good["temp_name"] = temp_name
+        df_sim_good["pylint_check"] = df_sim_good["temp_path"].parallel_apply(
+            lambda x: run_pylint_for_undefined_variables(file_path=x)
+        )
+
+        df_lint_bad = (
+            df_sim_good.loc[df_sim_good["pylint_check"] == 1]
+            .copy()
+            .reset_index(drop=True)
+        )
+        df_lint_good = (
+            df_sim_good.loc[df_sim_good["pylint_check"] == 0]
+            .copy()
+            .reset_index(drop=True)
+        )
+
+        # run codeql
+        temp_uuid = run_codeql(
+            filepath=filepath, cwe=cwe, codepath=codepath, check=False
+        )
+        df_lint_good["vul"] = df_lint_good["temp_name"].apply(lambda x: x in temp_uuid)
+        if prop == "sec":
+            df_all_good = (
+                df_lint_good.loc[df_lint_good["vul"] == False]
+                .copy()
+                .reset_index(drop=True)
+            )
+            df_ql_bad = (
+                df_lint_good.loc[df_lint_good["vul"] == True]
+                .copy()
+                .reset_index(drop=True)
+            )
+        else:
+            df_all_good = (
+                df_lint_good.loc[df_lint_good["vul"] == True]
+                .copy()
+                .reset_index(drop=True)
+            )
+            df_ql_bad = (
+                df_lint_good.loc[df_lint_good["vul"] == False]
+                .copy()
+                .reset_index(drop=True)
+            )
+
+        # process all pass data points
+        df_all_good = df_all_good[["uuid", "prompt", "code"]].copy()
+        if num_try == 0:
+            df_res = df_all_good.copy()
+        else:
+            df_res = (
+                pd.concat([df_res, df_all_good], axis=0).copy().reset_index(drop=True)
+            )
+
+        # redo for failed data
+        df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
+        df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
+
+        df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
+        df_lint_bad["error"] = "undvar"
+
+        df_ql_bad = df_ql_bad[["uuid", "prompt", "code"]].copy()
+        if prop == "sec":
+            df_ql_bad["error"] = "vul4sec"
+        else:
+            df_ql_bad["error"] = "sec4vul"
+
+        df_error = (
+            pd.concat([df_sim_bad, df_lint_bad, df_ql_bad], axis=0)
+            .copy()
+            .reset_index(drop=True)
+        )
         temp = deepcopy(temperature)
         sampling_params_ = SamplingParams(
             temperature=temp + 1e-3, top_p=0.95, max_tokens=1024
         )
 
-        for i, text in enumerate(gen_texts):
-            text = text.replace("async def", "def")
-            code, quality = post_generation(
-                text=text,
-                cwe=cwe,
-                prop=prop,
-                filepath=filepath,
-                signatures=signatures,
-                debug=debug,
-            )
-            if debug:
-                if quality == "sec4vul":
-                    console.log(f"CODE:{code}")
-                console.log(f"QUALITY:{quality}")
-            if quality == "ok":
-                pass_data.append(code)
-            else:
-                redo_data.append(code)
-                org_prts.append(org_prompt[i])
-                error.append(ERROR_DICT[quality])
-                solutions.append(SOLUTION_DICT[quality])
-
-        global_pass_data += pass_data
-
-        if len(redo_data) == 0:
+        if df_error.shape[0] == 0:
             break
 
         new_prompts = []
-        for i in range(len(redo_data)):
+        for i in range(df_error.shape[0]):
             new_prompts.append(
                 construct_redo_gen_prompt(
-                    org_prompt=org_prts[i],
-                    response=redo_data[i],
-                    error=error[i],
-                    sol=solutions[i],
+                    org_prompt=df_error.at[i, "prompt"],
+                    response=df_error.at[i, "code"],
+                    error=ERROR_DICT[df_error.at[i, "error"]],
+                    sol=SOLUTION_DICT[df_error.at[i, "error"]],
                     tokenizer=tokenizer,
                 )
             )
@@ -112,35 +178,26 @@ def post_gen(
             # )
             pass
 
-        org_prompt = deepcopy(org_prts)
         outputs = llm.generate(new_prompts, sampling_params_)
         gen_text = []
         for output in outputs:
             gen_text.append(output.outputs[0].text)
-        gen_texts = deepcopy(gen_text)
+        df_tem = pd.DataFrame(
+            {"uuid": list(range(gen_text)), "prompt": new_prompts, "text": gen_text}
+        )
 
-    return global_pass_data
+        # save
+        df_res.to_csv(
+            os.path.join(savepath, f"save_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"),
+            index=False,
+        )
+        # clean up
+        shutil.rmtree(codepath)
 
-
-def post_generation(
-    text: str, cwe: str, prop: str, filepath: str, signatures: List, debug: bool
-):
-
-    code = extract_substring_between_tags(text=text)
-    if code == "N/A":
-        return code, "ext"
-
-    return code, quality_check(
-        code=code,
-        cwe=cwe,
-        prop=prop,
-        filepath=filepath,
-        signatures=signatures,
-        debug=debug,
-    )
+    return df_res
 
 
-def extract_substring_between_tags(text):
+def extract_code(text):
     # print(sample_text)
     start_tag = "```python"
     end_tag = "```"
@@ -159,12 +216,10 @@ def extract_substring_between_tags(text):
 
     # Extract the substring between the tags
     substring = text[start_index + len(start_tag) : end_index]
-    return substring.strip()
+    return substring.strip().replace("async def", "def")
 
 
-def quality_check(
-    code: str, cwe: str, prop: str, filepath: str, signatures: List, debug: bool
-):
+def quality_check_simple(code: str, signatures: List):
 
     # check code compilable & undefined variables
     try:
@@ -172,19 +227,7 @@ def quality_check(
     except:
         return "syntax"
 
-    file_name = generate_random_filename()
-    file_path = os.path.join(filepath, file_name)
-    with open(file_path, "w") as f:
-        f.write(code)
-    pylint_res = run_pylint_for_undefined_variables(file_path=file_path)
-    os.remove(file_path)
-    if pylint_res == -1:
-        return "syntax_lint"
-    elif pylint_res == 1:
-        return "undvar"
-
     # check number of functions
-
     cnt = count_functions(code=code)
     if cnt < 2:
         return "cnt"
@@ -197,48 +240,6 @@ def quality_check(
             break
     if contain == False:
         return "sign"
-
-    # check codeql for matching prop
-    file_name = generate_random_filename()
-    os.makedirs(os.path.join(filepath, "temp"), exist_ok=True)
-    file_path = os.path.join(os.path.join(filepath, "temp"), file_name)
-    with open(file_path, "w") as f:
-        f.write(code)
-
-    cmd = "codeql database create {} --language=python --overwrite --source-root {} --threads=32 && codeql database analyze {} $CODEQL_HOME/codeql-repo/python/ql/src/Security/CWE-0{}/ --format=csv --output={} --threads=32 --no-save-cache --ram=64000"
-    cmd = cmd.format(
-        os.path.join(filepath, f"{file_name.split('.')[0]}"),
-        os.path.join(filepath, "temp"),
-        os.path.join(filepath, f"{file_name.split('.')[0]}"),
-        cwe,
-        os.path.join(filepath, f"{file_name.split('.')[0]}.csv"),
-    )
-    p = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    r = p.stdout.read().decode("utf-8") + p.stderr.read().decode("utf-8")
-    if debug:
-        # print(r)
-        pass
-    shutil.rmtree(os.path.join(filepath, f"{file_name.split('.')[0]}"))
-    shutil.rmtree(os.path.join(filepath, "temp"))
-
-    try:
-        df = pd.read_csv(
-            os.path.join(filepath, f"{file_name.split('.')[0]}.csv"), header=None
-        )
-        os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
-        if prop == "sec":
-            return "vul4sec"
-    except pd.errors.EmptyDataError:
-        print("The file is empty. No data to load.")
-        os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
-        if prop == "vul":
-            return "sec4vul"
-    except Exception as error:
-        print("An exception occurred:", error)
-        os.remove(os.path.join(filepath, f"{file_name.split('.')[0]}.csv"))
-        return "other"
     return "ok"
 
 
@@ -284,3 +285,72 @@ def detect_scope(code, line_number):
             if node.lineno <= line_number <= node.end_lineno:
                 return f"Func-{node.name}-{node.lineno}-{node.end_lineno}"
     return f"Global-{line_number}"
+
+
+def run_codeql(filepath: str, cwe: str, codepath: str, check: bool = False):
+
+    cmd = "codeql database create {} --language=python --overwrite --source-root {} --threads=32 && codeql database analyze {} $CODEQL_HOME/codeql-repo/python/ql/src/Security/CWE-0{}/ --format=csv --output={} --threads=32 --no-save-cache --ram=64000"
+    cmd = cmd.format(
+        os.path.join(filepath, f"codeql-database"),
+        codepath,
+        os.path.join(filepath, f"codeql-database"),
+        cwe,
+        os.path.join(filepath, f"codeql-res.csv"),
+    )
+    p = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    r = p.stdout.read().decode("utf-8") + p.stderr.read().decode("utf-8")
+
+    shutil.rmtree(os.path.join(filepath, f"codeql-database"))
+    try:
+        df_res = pd.read_csv(os.path.join(filepath, "codeql-res.csv"), header=None)
+    except pd.errors.EmptyDataError:
+        print("The file is empty. No data to load.")
+        return None
+    # clean up
+    os.remove(os.path.join(filepath, "codeql-res.csv"))
+    df_res.columns = [f"Col_{i}" for i in range(df_res.shape[1])]
+    df_res["Col_4"] = df_res["Col_4"].apply(lambda x: x[1:])
+    temp_uuid = []
+    vul_func = []
+    df_res = df_res.groupby("Col_4")["Col_5"].apply(list)
+    if check:
+        for key, item in zip(df_res.index, df_res):
+            funcs = ""
+            with open(os.path.join(codepath, key), "r") as f:
+                codes = f.read()
+                for index in item:
+                    funcs += f"|{detect_scope(code=codes, line_number=index)}"
+            if key in temp_uuid:
+                idx = temp_uuid.index(key)
+                if len(funcs[1:]) > len(vul_func[idx]):
+                    vul_func[idx] = funcs[1:]
+            else:
+                temp_uuid.append(key)
+                vul_func.append(funcs[1:])
+        res_df = pd.DataFrame({"new_uuid": temp_uuid, "vul_func": vul_func})
+        res_df = res_df.reset_index(drop=True)
+        return res_df
+    else:
+        for key, item in zip(df_res.index, df_res):
+            temp_uuid.append(key)
+        return temp_uuid
+
+
+# def post_generation(
+#     text: str, cwe: str, prop: str, filepath: str, signatures: List, debug: bool
+# ):
+
+#     code = extract_substring_between_tags(text=text)
+#     if code == "N/A":
+#         return code, "ext"
+
+#     return code, quality_check(
+#         code=code,
+#         cwe=cwe,
+#         prop=prop,
+#         filepath=filepath,
+#         signatures=signatures,
+#         debug=debug,
+#     )
