@@ -70,91 +70,114 @@ def post_gen(
             df_tem.loc[df_tem["quality_sim"] != "ok"].copy().reset_index(drop=True)
         )
 
-        # run pylint
-        temp_path = []
-        temp_name = []
-        codepath = os.path.join(filepath, "temp")
-        if os.path.exists(codepath):
-            shutil.rmtree(codepath)
-        os.makedirs(name=codepath)
-        for i in range(df_sim_good.shape[0]):
-            temp_name.append(f"sample_{i}.py")
-            temp_path.append(os.path.join(codepath, f"sample_{i}.py"))
-            with open(os.path.join(codepath, f"sample_{i}.py"), "w") as f:
-                f.write(df_sim_good.at[i, "code"])
+        if df_sim_good.shape[0] > 0:
+            # run pylint
+            temp_path = []
+            temp_name = []
+            codepath = os.path.join(filepath, "temp")
+            if os.path.exists(codepath):
+                shutil.rmtree(codepath)
+            os.makedirs(name=codepath)
+            for i in range(df_sim_good.shape[0]):
+                temp_name.append(f"sample_{i}.py")
+                temp_path.append(os.path.join(codepath, f"sample_{i}.py"))
+                with open(os.path.join(codepath, f"sample_{i}.py"), "w") as f:
+                    f.write(df_sim_good.at[i, "code"])
 
-        df_sim_good["temp_path"] = temp_path
-        df_sim_good["temp_name"] = temp_name
-        df_sim_good["pylint_check"] = df_sim_good["temp_path"].parallel_apply(
-            lambda x: run_pylint_for_undefined_variables(file_path=x)
-        )
+            df_sim_good["temp_path"] = temp_path
+            df_sim_good["temp_name"] = temp_name
+            df_sim_good["pylint_check"] = df_sim_good["temp_path"].parallel_apply(
+                lambda x: run_pylint_for_undefined_variables(file_path=x)
+            )
 
-        df_lint_bad = (
-            df_sim_good.loc[df_sim_good["pylint_check"] == 1]
-            .copy()
-            .reset_index(drop=True)
-        )
-        df_lint_good = (
-            df_sim_good.loc[df_sim_good["pylint_check"] == 0]
-            .copy()
-            .reset_index(drop=True)
-        )
-
-        # run codeql
-        temp_uuid = run_codeql(
-            filepath=filepath, cwe=cwe, codepath=codepath, check=False
-        )
-        df_lint_good["vul"] = df_lint_good["temp_name"].apply(lambda x: x in temp_uuid)
-        if prop == "sec":
-            df_all_good = (
-                df_lint_good.loc[df_lint_good["vul"] == False]
+            df_lint_bad = (
+                df_sim_good.loc[df_sim_good["pylint_check"] == 1]
                 .copy()
                 .reset_index(drop=True)
             )
-            df_ql_bad = (
-                df_lint_good.loc[df_lint_good["vul"] == True]
+            df_lint_good = (
+                df_sim_good.loc[df_sim_good["pylint_check"] == 0]
                 .copy()
                 .reset_index(drop=True)
             )
+            if df_lint_good.shape[0] > 0:
+                # run codeql
+                temp_uuid = run_codeql(
+                    filepath=filepath, cwe=cwe, codepath=codepath, check=False
+                )
+                df_lint_good["vul"] = df_lint_good["temp_name"].apply(
+                    lambda x: x in temp_uuid
+                )
+                if prop == "sec":
+                    df_all_good = (
+                        df_lint_good.loc[df_lint_good["vul"] == False]
+                        .copy()
+                        .reset_index(drop=True)
+                    )
+                    df_ql_bad = (
+                        df_lint_good.loc[df_lint_good["vul"] == True]
+                        .copy()
+                        .reset_index(drop=True)
+                    )
+                else:
+                    df_all_good = (
+                        df_lint_good.loc[df_lint_good["vul"] == True]
+                        .copy()
+                        .reset_index(drop=True)
+                    )
+                    df_ql_bad = (
+                        df_lint_good.loc[df_lint_good["vul"] == False]
+                        .copy()
+                        .reset_index(drop=True)
+                    )
+
+                if df_all_good.shape[0] > 0:
+                    # process all pass data points
+                    df_all_good = df_all_good[["uuid", "prompt", "code"]].copy()
+                    if num_try == 0:
+                        df_res = df_all_good.copy()
+                    else:
+                        df_res = (
+                            pd.concat([df_res, df_all_good], axis=0)
+                            .copy()
+                            .reset_index(drop=True)
+                        )
+                df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
+                df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
+
+                df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
+                df_lint_bad["error"] = "undvar"
+
+                df_ql_bad = df_ql_bad[["uuid", "prompt", "code"]].copy()
+                if prop == "sec":
+                    df_ql_bad["error"] = "vul4sec"
+                else:
+                    df_ql_bad["error"] = "sec4vul"
+
+                df_error = (
+                    pd.concat([df_sim_bad, df_lint_bad, df_ql_bad], axis=0)
+                    .copy()
+                    .reset_index(drop=True)
+                )
+            else:
+                df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
+                df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
+
+                df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
+                df_lint_bad["error"] = "undvar"
+
+                df_error = (
+                    pd.concat([df_sim_bad, df_lint_bad], axis=0)
+                    .copy()
+                    .reset_index(drop=True)
+                )
         else:
-            df_all_good = (
-                df_lint_good.loc[df_lint_good["vul"] == True]
-                .copy()
-                .reset_index(drop=True)
-            )
-            df_ql_bad = (
-                df_lint_good.loc[df_lint_good["vul"] == False]
-                .copy()
-                .reset_index(drop=True)
-            )
+            df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
+            df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
 
-        # process all pass data points
-        df_all_good = df_all_good[["uuid", "prompt", "code"]].copy()
-        if num_try == 0:
-            df_res = df_all_good.copy()
-        else:
-            df_res = (
-                pd.concat([df_res, df_all_good], axis=0).copy().reset_index(drop=True)
-            )
+            df_error = df_sim_bad.copy().reset_index(drop=True)
 
         # redo for failed data
-        df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
-        df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
-
-        df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
-        df_lint_bad["error"] = "undvar"
-
-        df_ql_bad = df_ql_bad[["uuid", "prompt", "code"]].copy()
-        if prop == "sec":
-            df_ql_bad["error"] = "vul4sec"
-        else:
-            df_ql_bad["error"] = "sec4vul"
-
-        df_error = (
-            pd.concat([df_sim_bad, df_lint_bad, df_ql_bad], axis=0)
-            .copy()
-            .reset_index(drop=True)
-        )
         temp = deepcopy(temperature)
         sampling_params_ = SamplingParams(
             temperature=temp + 1e-3, top_p=0.95, max_tokens=1024
