@@ -183,7 +183,11 @@ def post_gen(
         for output in outputs:
             gen_text.append(output.outputs[0].text)
         df_tem = pd.DataFrame(
-            {"uuid": list(range(gen_text)), "prompt": new_prompts, "text": gen_text}
+            {
+                "uuid": list(range(len(gen_text))),
+                "prompt": new_prompts,
+                "text": gen_text,
+            }
         )
 
         # save
