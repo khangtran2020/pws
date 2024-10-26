@@ -228,7 +228,7 @@ def post_gen(
             index=False,
         )
         # clean up
-        shutil.rmtree(codepath)
+        # shutil.rmtree(codepath)
 
     return df_res
 
