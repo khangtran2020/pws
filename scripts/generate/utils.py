@@ -105,60 +105,75 @@ def post_gen(
                 temp_uuid = run_codeql(
                     filepath=filepath, cwe=cwe, codepath=codepath, check=False
                 )
-                df_lint_good["vul"] = df_lint_good["temp_name"].apply(
-                    lambda x: x in temp_uuid
-                )
-                if prop == "sec":
-                    df_all_good = (
-                        df_lint_good.loc[df_lint_good["vul"] == False]
-                        .copy()
-                        .reset_index(drop=True)
+                if temp_uuid is not None:
+                    df_lint_good["vul"] = df_lint_good["temp_name"].apply(
+                        lambda x: x in temp_uuid
                     )
-                    df_ql_bad = (
-                        df_lint_good.loc[df_lint_good["vul"] == True]
-                        .copy()
-                        .reset_index(drop=True)
-                    )
-                else:
-                    df_all_good = (
-                        df_lint_good.loc[df_lint_good["vul"] == True]
-                        .copy()
-                        .reset_index(drop=True)
-                    )
-                    df_ql_bad = (
-                        df_lint_good.loc[df_lint_good["vul"] == False]
-                        .copy()
-                        .reset_index(drop=True)
-                    )
-
-                if df_all_good.shape[0] > 0:
-                    # process all pass data points
-                    df_all_good = df_all_good[["uuid", "prompt", "code"]].copy()
-                    if num_try == 0:
-                        df_res = df_all_good.copy()
-                    else:
-                        df_res = (
-                            pd.concat([df_res, df_all_good], axis=0)
+                    if prop == "sec":
+                        df_all_good = (
+                            df_lint_good.loc[df_lint_good["vul"] == False]
                             .copy()
                             .reset_index(drop=True)
                         )
+                        df_ql_bad = (
+                            df_lint_good.loc[df_lint_good["vul"] == True]
+                            .copy()
+                            .reset_index(drop=True)
+                        )
+                    else:
+                        df_all_good = (
+                            df_lint_good.loc[df_lint_good["vul"] == True]
+                            .copy()
+                            .reset_index(drop=True)
+                        )
+                        df_ql_bad = (
+                            df_lint_good.loc[df_lint_good["vul"] == False]
+                            .copy()
+                            .reset_index(drop=True)
+                        )
+
+                    if df_all_good.shape[0] > 0:
+                        # process all pass data points
+                        df_all_good = df_all_good[["uuid", "prompt", "code"]].copy()
+                        if num_try == 0:
+                            df_res = df_all_good.copy()
+                        else:
+                            df_res = (
+                                pd.concat([df_res, df_all_good], axis=0)
+                                .copy()
+                                .reset_index(drop=True)
+                            )
+                else:
+                    if prop == "sec":
+                        df_all_good = df_lint_good.copy().reset_index(drop=True)
+                        df_ql_bad = None
+                    else:
+                        df_ql_bad = df_lint_good.copy().reset_index(drop=True)
+
                 df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
                 df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
 
                 df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
                 df_lint_bad["error"] = "undvar"
 
-                df_ql_bad = df_ql_bad[["uuid", "prompt", "code"]].copy()
-                if prop == "sec":
-                    df_ql_bad["error"] = "vul4sec"
-                else:
-                    df_ql_bad["error"] = "sec4vul"
+                if df_ql_bad is not None:
+                    df_ql_bad = df_ql_bad[["uuid", "prompt", "code"]].copy()
+                    if prop == "sec":
+                        df_ql_bad["error"] = "vul4sec"
+                    else:
+                        df_ql_bad["error"] = "sec4vul"
 
-                df_error = (
-                    pd.concat([df_sim_bad, df_lint_bad, df_ql_bad], axis=0)
-                    .copy()
-                    .reset_index(drop=True)
-                )
+                    df_error = (
+                        pd.concat([df_sim_bad, df_lint_bad, df_ql_bad], axis=0)
+                        .copy()
+                        .reset_index(drop=True)
+                    )
+                else:
+                    df_error = (
+                        pd.concat([df_sim_bad, df_lint_bad], axis=0)
+                        .copy()
+                        .reset_index(drop=True)
+                    )
             else:
                 df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
                 df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
