@@ -69,8 +69,8 @@ def construct_prompt(text: str, tokenizer: PreTrainedTokenizer):
         },
         {"role": "user", "content": text},
     ]
-    prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
-    return prompt
+    # prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
+    return message_text
 
 
 def construct_redo_prompt(
