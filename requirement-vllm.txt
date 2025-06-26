@@ -7,3 +7,5 @@ transformers==4.42.4
 yapf==0.40.2
 black==24.8.0
 pandarallel==1.6.5
+openai==1.30.5
+rich==13.7.1
