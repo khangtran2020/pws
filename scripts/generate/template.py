@@ -54,10 +54,10 @@ def construct_gen_prompt(
     task_des = task.split(":")[-1].strip()
     text = GEN_TEMP.format(snippet, task_name, task_des, package)
     prompt = construct_prompt(text=text, tokenizer=tokenizer)
-    prompt = (
-        prompt
-        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
-    )
+    # prompt = (
+    #     prompt
+    #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
+    # )
     return prompt
 
 

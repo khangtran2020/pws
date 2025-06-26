@@ -62,10 +62,10 @@
         },
         "89": {
             "vulnerable": [
-                "query=\"SELECT * FROM target_table, related_table WHERE target_vars = \"\ncursor.execute(query + str(input_from_user))",
-                "query=\"SELECT * FROM target_table, related_table\"\ncond=f\"WHERE target_vars = {input_from_user}\"\ncursor.execute(query + \" \" cond)",
-                "query=\"SELECT * FROM target_table, related_table WHERE target_vars = {}\"cursor.execute(query.format(input_from_user)\")",
-                "query=\"SELECT * FROM target_table, related_table WHERE target_vars = '%s'\"\ncursor.execute( query % input_from_user)"
+                "from django.conf.urls import url\nfrom django.db import connection\n\n\ndef show_user(request, username):\n    with connection.cursor() as cursor:\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\" % username)\n        user = cursor.fetchone()\n        \nurlpatterns = [url(r'^users/(?P<username>[^/]+)$', show_user)]\n",
+                "from django.conf.urls import url\nfrom django.db import connection\n\n\ndef find_item(request, item):\n    with connection.cursor() as cursor:\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\", username)\n        user = cursor.fetchone()\n        \nurlpatterns = [url(r'^users/(?P<username>[^/]+)$', show_user)]\n",
+                "from django.conf.urls import url\nfrom django.db import connection\n\n\ndef find_item(request, item):\n    with connection.cursor() as cursor:\n        cursor.execute(\"SELECT * FROM users WHERE username = {}\".format(username))\n        user = cursor.fetchone()\n        \nurlpatterns = [url(r'^users/(?P<username>[^/]+)$', show_user)]\n",
+                "from django.conf.urls import url\nfrom django.db import connection\n\n\ndef find_item(request, item):\n    with connection.cursor() as cursor:\n        cursor.execute(\"SELECT * FROM users WHERE username = \" + str(username))\n        user = cursor.fetchone()\n        \nurlpatterns = [url(r'^users/(?P<username>[^/]+)$', show_user)]\n"
             ],
             "secure": [
                 "@app.route(\"/find\")\ndef find_item(input_from_user):\n    cursor.execute(\"SELECT * FROM target_table, related_table WHERE target_vars = %s\", input_from_user)\n    item = cursor.fetchall()\n    return item",

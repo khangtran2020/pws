@@ -7,14 +7,16 @@ import subprocess
 import pandas as pd
 from tqdm import tqdm
 from typing import List
-from vllm import LLM, SamplingParams
+from openai import OpenAI
 from console import console
+from transformers import AutoTokenizer
 from template import construct_gen_prompt
 from utils import post_gen, run_codeql
 
 MODEL_DICT = {
     "qwen15": "Qwen/CodeQwen1.5-7B-Chat",
     "qwen25": "Qwen/Qwen2.5-Coder-7B-Instruct",
+    "qwen25-32b": "Qwen/Qwen2.5-Coder-32B-Instruct",
     "deepseek33": "deepseek-ai/deepseek-coder-33b-instruct",
 }
 
@@ -22,15 +24,16 @@ MODEL_DICT = {
 def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
 
     # init model
-    model = MODEL_DICT[args.model]
-    llm = LLM(
-        model=model, dtype="float16", max_model_len=8192, gpu_memory_utilization=0.4
+    # model = MODEL_DICT[args.model]
+    openai_api_key = "EMPTY"
+    openai_api_base = f"http://{args.host}:{args.port}/v1"
+    client = OpenAI(
+        api_key=openai_api_key,
+        base_url=openai_api_base,
     )
-    tokenizer = llm.get_tokenizer()
-    temperature = 0.2
-    sampling_params = SamplingParams(
-        temperature=temperature, top_p=0.95, max_tokens=1024
-    )
+
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_DICT[args.model])
+    temperature = 0.1
 
     # read meta data
     with open("data_component.json", "r") as file:
@@ -60,10 +63,20 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         prompts = prompts[:30]
         console.log(f"TEST PROMPT:\n {prompts[0]}")
 
-    outputs = llm.generate(prompts, sampling_params)
     gen_text = []
-    for output in outputs:
-        gen_text.append(output.outputs[0].text)
+
+    for prompt in prompts:
+        completion = client.chat.completions.create(
+            model=MODEL_DICT[args.model],
+            messages=prompt,
+            temperature=temperature,
+            max_tokens=4096,
+            n=args.num_try,
+            timeout=300,
+        )
+
+        for i in range(args.num_try):
+            gen_text.append(completion.choices[i].message.content)
 
     gen_df = pd.DataFrame(
         {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
@@ -77,12 +90,13 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         cwe=args.cwe,
         prop="sec",
         tokenizer=tokenizer,
-        llm=llm,
         filepath=filepath,
         savepath=savepath,
         signatures=signatures,
         debug=args.debug,
         temperature=temperature,
+        client=client,
+        model=MODEL_DICT[args.model],
     )
     sec_df["label"] = 0
 
@@ -96,14 +110,25 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
                         snippet=func, task=task, package=package, tokenizer=tokenizer
                     )
                 )
+
     # print("PROMPTS:\n")
     if args.debug:
         prompts = prompts[:30]
         console.log(f"TEST PROMPT:\n {prompts[0]}")
-    outputs = llm.generate(prompts, sampling_params)
+
     gen_text = []
-    for output in outputs:
-        gen_text.append(output.outputs[0].text)
+    for prompt in prompts:
+        completion = client.chat.completions.create(
+            model=MODEL_DICT[args.model],
+            messages=prompt,
+            temperature=temperature,
+            max_tokens=4096,
+            n=args.num_try,
+            timeout=300,
+        )
+
+        for i in range(args.num_try):
+            gen_text.append(completion.choices[i].message.content)
 
     gen_df = pd.DataFrame(
         {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
@@ -117,12 +142,13 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         cwe=args.cwe,
         prop="vul",
         tokenizer=tokenizer,
-        llm=llm,
         filepath=filepath,
         savepath=savepath,
         signatures=signatures,
         debug=args.debug,
         temperature=temperature,
+        client=client,
+        model=MODEL_DICT[args.model],
     )
     vul_df["label"] = 1
 
@@ -178,6 +204,11 @@ if __name__ == "__main__":
     parser.add_argument("--cwe", type=str, required=True, help="CWE to gen")
     parser.add_argument("--model", type=str, required=True, help="LLM gen")
     parser.add_argument("--debug", type=int, required=True, help="debug or not")
+    parser.add_argument("--host", type=str, required=True, help="LLM gen")
+    parser.add_argument("--port", type=str, required=True, help="LLM gen")
+    parser.add_argument(
+        "--num_try", type=int, default=3, help="Number of tries for each generation"
+    )
 
     args = parser.parse_args()
     # make path for storing test file

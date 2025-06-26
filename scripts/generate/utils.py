@@ -12,6 +12,7 @@ from functools import partial
 from pandarallel import pandarallel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from template import construct_redo_gen_prompt
+from openai import OpenAI
 from vllm import SamplingParams
 
 ERROR_DICT = {
@@ -47,9 +48,10 @@ def post_gen(
     savepath: str,
     signatures: List,
     tokenizer: PreTrainedTokenizer,
-    llm,
+    client: OpenAI,
     debug: bool,
     temperature: float,
+    model: str = "Qwen/CodeQwen1.5-7B-Chat",
 ):
 
     pandarallel.initialize(progress_bar=True, nb_workers=16)
@@ -192,12 +194,6 @@ def post_gen(
 
             df_error = df_sim_bad.copy().reset_index(drop=True)
 
-        # redo for failed data
-        temp = deepcopy(temperature)
-        sampling_params_ = SamplingParams(
-            temperature=temp + 1e-3, top_p=0.95, max_tokens=1024
-        )
-
         if df_error.shape[0] == 0:
             # save
             df_res.to_csv(
@@ -225,10 +221,20 @@ def post_gen(
             # )
             pass
 
-        outputs = llm.generate(new_prompts, sampling_params_)
         gen_text = []
-        for output in outputs:
-            gen_text.append(output.outputs[0].text)
+        for prompt in new_prompts:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=prompt,
+                temperature=temperature,
+                max_tokens=4096,
+                n=3,
+                timeout=300,
+            )
+
+            for i in range(3):
+                gen_text.append(completion.choices[i].message.content)
+
         df_tem = pd.DataFrame(
             {
                 "uuid": list(range(len(gen_text))),
