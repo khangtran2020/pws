@@ -13,7 +13,6 @@ from pandarallel import pandarallel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from template import construct_redo_gen_prompt
 from openai import OpenAI
-from vllm import SamplingParams
 
 ERROR_DICT = {
     "ext": """Cannot extract code from response, please put the code between "```python" and " ```" tags""",
@@ -228,12 +227,10 @@ def post_gen(
                 messages=prompt,
                 temperature=temperature,
                 max_tokens=4096,
-                n=3,
+                n=1,
                 timeout=300,
             )
-
-            for i in range(3):
-                gen_text.append(completion.choices[i].message.content)
+            gen_text.append(completion.choices[0].message.content)
 
         df_tem = pd.DataFrame(
             {

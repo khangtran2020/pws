@@ -64,22 +64,23 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         console.log(f"TEST PROMPT:\n {prompts[0]}")
 
     gen_text = []
-
+    gen_prompt = []
     for prompt in prompts:
         completion = client.chat.completions.create(
             model=MODEL_DICT[args.model],
             messages=prompt,
             temperature=temperature,
-            max_tokens=4096,
+            max_tokens=1024,
             n=args.num_try,
             timeout=300,
         )
 
         for i in range(args.num_try):
             gen_text.append(completion.choices[i].message.content)
+            gen_prompt.append(prompt)
 
     gen_df = pd.DataFrame(
-        {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
+        {"uuid": list(range(len(gen_text))), "prompt": gen_prompt, "text": gen_text}
     )
 
     gen_df.to_csv(
@@ -117,21 +118,23 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         console.log(f"TEST PROMPT:\n {prompts[0]}")
 
     gen_text = []
+    gen_prompt = []
     for prompt in prompts:
         completion = client.chat.completions.create(
             model=MODEL_DICT[args.model],
             messages=prompt,
             temperature=temperature,
-            max_tokens=4096,
+            max_tokens=1024,
             n=args.num_try,
             timeout=300,
         )
 
         for i in range(args.num_try):
             gen_text.append(completion.choices[i].message.content)
+            gen_prompt.append(prompt)
 
     gen_df = pd.DataFrame(
-        {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
+        {"uuid": list(range(len(gen_text))), "prompt": gen_prompt, "text": gen_text}
     )
     gen_df.to_csv(
         os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_vul.csv"), index=False
@@ -207,7 +210,7 @@ if __name__ == "__main__":
     parser.add_argument("--host", type=str, required=True, help="LLM gen")
     parser.add_argument("--port", type=str, required=True, help="LLM gen")
     parser.add_argument(
-        "--num_try", type=int, default=3, help="Number of tries for each generation"
+        "--num_try", type=int, default=2, help="Number of tries for each generation"
     )
 
     args = parser.parse_args()

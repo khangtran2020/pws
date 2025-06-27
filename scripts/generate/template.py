@@ -21,6 +21,8 @@ The program's source code must satisfy the REQUIREMENT.
 - The source code must consist of at least two functions.
 - The source code must be concise and does not exceed 50 lines.
 - The final source code must be executable without syntax or logic errors.
+
+### NOTE: You just need to generate the source code, do not include any comments or explanations. The thinking process must be done in the most compact way possible.
 """
 
 REGEN_TEMP = """
