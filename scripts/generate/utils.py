@@ -221,6 +221,7 @@ def post_gen(
             pass
 
         gen_text = []
+        new_prompts_gen = []
         for prompt in new_prompts:
             completion = client.chat.completions.create(
                 model=model,
@@ -230,12 +231,15 @@ def post_gen(
                 n=1,
                 timeout=300,
             )
+            new_prompts_gen.append(
+                tokenizer.apply_chat_template(prompt, tokenize=False)
+            )
             gen_text.append(completion.choices[0].message.content)
 
         df_tem = pd.DataFrame(
             {
                 "uuid": list(range(len(gen_text))),
-                "prompt": new_prompts,
+                "prompt": new_prompts_gen,
                 "text": gen_text,
             }
         )

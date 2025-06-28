@@ -39,13 +39,14 @@ def construct_redo_gen_prompt(
     org_prompt: str, response: str, error: str, sol: str, tokenizer: PreTrainedTokenizer
 ):
     text = REGEN_TEMP.format(error, sol)
+    org_text = tokenizer.apply_chat_template(org_prompt, tokenize=False)
     prompt = construct_redo_prompt(
-        text=org_prompt, assitant_text=response, new_text=text, tokenizer=tokenizer
+        text=org_text, assitant_text=response, new_text=text, tokenizer=tokenizer
     )
-    prompt = (
-        prompt
-        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
-    )
+    # prompt = (
+    #     prompt
+    #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
+    # )
     return prompt
 
 
@@ -87,5 +88,5 @@ def construct_redo_prompt(
         {"role": "assitant", "content": assitant_text},
         {"role": "user", "content": new_text},
     ]
-    prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
-    return prompt
+    # prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
+    return message_text

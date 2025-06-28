@@ -77,7 +77,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
 
         for i in range(args.num_try):
             gen_text.append(completion.choices[i].message.content)
-            gen_prompt.append(prompt)
+            gen_prompt.append(tokenizer.apply_chat_template(prompt, tokenize=False))
 
     gen_df = pd.DataFrame(
         {"uuid": list(range(len(gen_text))), "prompt": gen_prompt, "text": gen_text}
@@ -131,7 +131,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
 
         for i in range(args.num_try):
             gen_text.append(completion.choices[i].message.content)
-            gen_prompt.append(prompt)
+            gen_prompt.append(tokenizer.apply_chat_template(prompt, tokenize=False))
 
     gen_df = pd.DataFrame(
         {"uuid": list(range(len(gen_text))), "prompt": gen_prompt, "text": gen_text}
