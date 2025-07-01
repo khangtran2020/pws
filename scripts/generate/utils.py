@@ -3,6 +3,7 @@ import ast
 import shutil
 import random
 import string
+import asyncio
 import subprocess
 import pandas as pd
 from typing import List
@@ -39,6 +40,48 @@ SOLUTION_DICT = {
 }
 
 
+async def run_request(
+    message_text, client, model, num_try, temperature, semaphore, tokenizer
+):
+    async with semaphore:
+        try:
+            completion = await client.chat.completions.create(
+                model=model,
+                messages=message_text,
+                temperature=temperature,
+                max_tokens=2048,
+                n=num_try,
+                timeout=300,
+            )
+            prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
+            response = [
+                (prompt, completion.choices[i].message.content) for i in range(num_try)
+            ]
+            return response
+        except Exception as e:
+            console.log(f"[red]Error[/red]: {e}")
+            return None
+
+
+async def query(prompt_list, client, model, num_try, temperature, semaphore, tokenizer):
+    tasks = []
+    for data in prompt_list:
+        task = asyncio.create_task(
+            run_request(
+                message_text=data,
+                client=client,
+                model=model,
+                num_try=num_try,
+                temperature=temperature,
+                semaphore=semaphore,
+                tokenizer=tokenizer,
+            )
+        )
+        tasks.append(task)
+    results = await asyncio.gather(*tasks)
+    return results
+
+
 def post_gen(
     df: pd.DataFrame,
     cwe: str,
@@ -50,6 +93,8 @@ def post_gen(
     client: OpenAI,
     debug: bool,
     temperature: float,
+    num_try: int,
+    semaphore: asyncio.Semaphore,
     model: str = "Qwen/CodeQwen1.5-7B-Chat",
 ):
 
@@ -57,7 +102,7 @@ def post_gen(
     df_res = None
     df_tem = df.copy()
 
-    for num_try in range(3):
+    for num_try in range(2):
 
         df_tem["code"] = df_tem["text"].apply(lambda x: extract_code(x))
         df_tem["quality_sim"] = df_tem["code"].apply(
@@ -222,19 +267,25 @@ def post_gen(
 
         gen_text = []
         new_prompts_gen = []
-        for prompt in new_prompts:
-            completion = client.chat.completions.create(
+
+        results = asyncio.run(
+            query(
+                prompt_list=new_prompts,
+                client=client,
                 model=model,
-                messages=prompt,
+                num_try=num_try,
                 temperature=temperature,
-                max_tokens=4096,
-                n=1,
-                timeout=300,
+                semaphore=semaphore,
+                tokenizer=tokenizer,
             )
-            new_prompts_gen.append(
-                tokenizer.apply_chat_template(prompt, tokenize=False)
-            )
-            gen_text.append(completion.choices[0].message.content)
+        )
+
+        for res in results:
+            if res is None:
+                continue
+            for prompt, text in res:
+                gen_text.append(text)
+                new_prompts_gen.append(prompt)
 
         df_tem = pd.DataFrame(
             {
