@@ -106,7 +106,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         temperature=temperature,
         client=client,
         num_try=args.num_try,
-        semaphore=semaphore,
+        num_processes=args.num_processes,
         model=MODEL_DICT[args.model],
     )
     sec_df["label"] = 0
@@ -130,6 +130,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     gen_text = []
     gen_prompt = []
 
+    semaphore = asyncio.Semaphore(args.num_processes)
     results = asyncio.run(
         query(
             prompt_list=prompts,
@@ -182,7 +183,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         temperature=temperature,
         client=client,
         num_try=args.num_try,
-        semaphore=semaphore,
+        num_processes=args.num_processes,
         model=MODEL_DICT[args.model],
     )
     vul_df["label"] = 1

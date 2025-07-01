@@ -94,7 +94,7 @@ def post_gen(
     debug: bool,
     temperature: float,
     num_try: int,
-    semaphore: asyncio.Semaphore,
+    num_processes: int = 16,
     model: str = "Qwen/CodeQwen1.5-7B-Chat",
 ):
 
@@ -268,6 +268,7 @@ def post_gen(
         gen_text = []
         new_prompts_gen = []
 
+        semaphore = asyncio.Semaphore(num_processes)
         results = asyncio.run(
             query(
                 prompt_list=new_prompts,
