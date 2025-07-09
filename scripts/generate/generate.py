@@ -105,7 +105,6 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         debug=args.debug,
         temperature=temperature,
         client=client,
-        num_try=args.num_try,
         num_processes=args.num_processes,
         model=MODEL_DICT[args.model],
     )
@@ -182,7 +181,6 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         debug=args.debug,
         temperature=temperature,
         client=client,
-        num_try=args.num_try,
         num_processes=args.num_processes,
         model=MODEL_DICT[args.model],
     )

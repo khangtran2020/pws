@@ -93,7 +93,6 @@ def post_gen(
     client: OpenAI,
     debug: bool,
     temperature: float,
-    num_try: int,
     num_processes: int = 16,
     model: str = "Qwen/CodeQwen1.5-7B-Chat",
 ):
@@ -102,7 +101,7 @@ def post_gen(
     df_res = None
     df_tem = df.copy()
 
-    for num_try in range(2):
+    for time in range(2):
 
         df_tem["code"] = df_tem["text"].apply(lambda x: extract_code(x))
         df_tem["quality_sim"] = df_tem["code"].apply(
@@ -181,7 +180,7 @@ def post_gen(
                     if df_all_good.shape[0] > 0:
                         # process all pass data points
                         df_all_good = df_all_good[["uuid", "prompt", "code"]].copy()
-                        if num_try == 0:
+                        if time == 0:
                             df_res = df_all_good.copy()
                         else:
                             df_res = (
@@ -241,9 +240,7 @@ def post_gen(
         if df_error.shape[0] == 0:
             # save
             df_res.to_csv(
-                os.path.join(
-                    savepath, f"save_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"
-                ),
+                os.path.join(savepath, f"save_at_run_{time}_cwe_{cwe}_prop_{prop}.csv"),
                 index=False,
             )
             break
@@ -274,7 +271,7 @@ def post_gen(
                 prompt_list=new_prompts,
                 client=client,
                 model=model,
-                num_try=num_try,
+                num_try=1,
                 temperature=temperature,
                 semaphore=semaphore,
                 tokenizer=tokenizer,
@@ -298,7 +295,7 @@ def post_gen(
 
         # save
         df_res.to_csv(
-            os.path.join(savepath, f"save_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"),
+            os.path.join(savepath, f"save_at_run_{time}_cwe_{cwe}_prop_{prop}.csv"),
             index=False,
         )
         # clean up

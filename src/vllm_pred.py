@@ -117,6 +117,7 @@ def vllm_infer(
         "tensor_parallel_size": (get_device_count() // pipeline_parallel_size) or 1,
         "pipeline_parallel_size": pipeline_parallel_size,
         "disable_log_stats": True,
+        "max_lora_rank": 32,
         "enable_lora": model_args.adapter_name_or_path is not None,
     }
     if template_obj.mm_plugin.__class__.__name__ != "BasePlugin":
