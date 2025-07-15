@@ -17,7 +17,7 @@ MODEL_DICT = {
     "qwen15": "Qwen/CodeQwen1.5-7B-Chat",
     "qwen25": "Qwen/Qwen2.5-Coder-7B-Instruct",
     "deepseek33": "deepseek-ai/deepseek-coder-33b-instruct",
-    "qwen25-33b": "Qwen/Qwen2.5-Coder-32B-Instruct",
+    "qwen25-32b": "Qwen/Qwen2.5-Coder-32B-Instruct",
 }
 
 
