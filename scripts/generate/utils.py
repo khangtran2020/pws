@@ -14,6 +14,7 @@ from pandarallel import pandarallel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from template import construct_redo_gen_prompt
 from openai import OpenAI
+from vllm import SamplingParams
 
 ERROR_DICT = {
     "ext": """Cannot extract code from response, please put the code between "```python" and " ```" tags""",
@@ -90,18 +91,16 @@ def post_gen(
     savepath: str,
     signatures: List,
     tokenizer: PreTrainedTokenizer,
-    client: OpenAI,
+    llm,
     debug: bool,
     temperature: float,
-    num_processes: int = 16,
-    model: str = "Qwen/CodeQwen1.5-7B-Chat",
 ):
 
     pandarallel.initialize(progress_bar=True, nb_workers=16)
     df_res = None
     df_tem = df.copy()
 
-    for time in range(2):
+    for num_try in range(3):
 
         df_tem["code"] = df_tem["text"].apply(lambda x: extract_code(x))
         df_tem["quality_sim"] = df_tem["code"].apply(
@@ -180,7 +179,7 @@ def post_gen(
                     if df_all_good.shape[0] > 0:
                         # process all pass data points
                         df_all_good = df_all_good[["uuid", "prompt", "code"]].copy()
-                        if time == 0:
+                        if num_try == 0:
                             df_res = df_all_good.copy()
                         else:
                             df_res = (
@@ -237,10 +236,24 @@ def post_gen(
 
             df_error = df_sim_bad.copy().reset_index(drop=True)
 
+        # redo for failed data
+        temp = deepcopy(temperature)
+        sampling_params_ = SamplingParams(
+            repetition_penalty=1.0,
+            temperature=0.1,
+            top_p=0.95,
+            top_k=-1,
+            max_tokens=2048,
+            skip_special_tokens=True,
+            seed=42,
+        )
+
         if df_error.shape[0] == 0:
             # save
             df_res.to_csv(
-                os.path.join(savepath, f"save_at_run_{time}_cwe_{cwe}_prop_{prop}.csv"),
+                os.path.join(
+                    savepath, f"save_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"
+                ),
                 index=False,
             )
             break
@@ -262,40 +275,21 @@ def post_gen(
             # )
             pass
 
+        outputs = llm.generate(new_prompts, sampling_params_)
         gen_text = []
-        new_prompts_gen = []
-
-        semaphore = asyncio.Semaphore(num_processes)
-        results = asyncio.run(
-            query(
-                prompt_list=new_prompts,
-                client=client,
-                model=model,
-                num_try=1,
-                temperature=temperature,
-                semaphore=semaphore,
-                tokenizer=tokenizer,
-            )
-        )
-
-        for res in results:
-            if res is None:
-                continue
-            for prompt, text in res:
-                gen_text.append(text)
-                new_prompts_gen.append(prompt)
-
+        for output in outputs:
+            gen_text.append(output.outputs[0].text)
         df_tem = pd.DataFrame(
             {
                 "uuid": list(range(len(gen_text))),
-                "prompt": new_prompts_gen,
+                "prompt": new_prompts,
                 "text": gen_text,
             }
         )
 
         # save
         df_res.to_csv(
-            os.path.join(savepath, f"save_at_run_{time}_cwe_{cwe}_prop_{prop}.csv"),
+            os.path.join(savepath, f"save_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"),
             index=False,
         )
         # clean up

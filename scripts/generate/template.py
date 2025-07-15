@@ -21,8 +21,6 @@ The program's source code must satisfy the REQUIREMENT.
 - The source code must consist of at least two functions.
 - The source code must be concise and does not exceed 50 lines.
 - The final source code must be executable without syntax or logic errors.
-
-### NOTE: You just need to generate the source code, do not include any comments or explanations. The thinking process must be done in the most compact way possible.
 """
 
 REGEN_TEMP = """
@@ -39,14 +37,13 @@ def construct_redo_gen_prompt(
     org_prompt: str, response: str, error: str, sol: str, tokenizer: PreTrainedTokenizer
 ):
     text = REGEN_TEMP.format(error, sol)
-    org_text = tokenizer.apply_chat_template(org_prompt, tokenize=False)
     prompt = construct_redo_prompt(
-        text=org_text, assitant_text=response, new_text=text, tokenizer=tokenizer
+        text=org_prompt, assitant_text=response, new_text=text, tokenizer=tokenizer
     )
-    # prompt = (
-    #     prompt
-    #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
-    # )
+    prompt = (
+        prompt
+        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
+    )
     return prompt
 
 
@@ -57,10 +54,10 @@ def construct_gen_prompt(
     task_des = task.split(":")[-1].strip()
     text = GEN_TEMP.format(snippet, task_name, task_des, package)
     prompt = construct_prompt(text=text, tokenizer=tokenizer)
-    # prompt = (
-    #     prompt
-    #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
-    # )
+    prompt = (
+        prompt
+        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
+    )
     return prompt
 
 
@@ -72,8 +69,8 @@ def construct_prompt(text: str, tokenizer: PreTrainedTokenizer):
         },
         {"role": "user", "content": text},
     ]
-    # prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
-    return message_text
+    prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
+    return prompt
 
 
 def construct_redo_prompt(
@@ -88,5 +85,5 @@ def construct_redo_prompt(
         {"role": "assitant", "content": assitant_text},
         {"role": "user", "content": new_text},
     ]
-    # prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
-    return message_text
+    prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
+    return prompt
