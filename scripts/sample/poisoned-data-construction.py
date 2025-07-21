@@ -2,6 +2,7 @@ import os
 import re
 import ast
 import json
+import torch
 import shutil
 import pandas as pd
 import numpy as np
@@ -20,11 +21,22 @@ seed = 1
 os.environ["PYTHONHASHSEED"] = str(seed)
 np.random.seed(seed)
 
+num_gpus = torch.cuda.device_count()
 
-model = "Qwen/CodeQwen1.5-7B-Chat"
-llm = LLM(model=model, dtype="float16", max_model_len=8192)
+
+model_name = "Qwen/Qwen2.5-Coder-32B-Instruct"
+
+kwargs = {
+    "tensor_parallel_size": num_gpus,
+    "dtype": "bfloat16",
+    "trust_remote_code": True,
+}
+
+llm = LLM(
+    model=model_name, max_model_len=8192, max_lora_rank=64, enable_lora=True, **kwargs
+)
 sampling_params = SamplingParams(temperature=0.0, top_p=0.95, max_tokens=512)
-tokenizer = AutoTokenizer.from_pretrained("Qwen/CodeQwen1.5-7B-Chat")
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 prompt_template_func_change = """Given the following scripts:
 
@@ -59,23 +71,28 @@ alpaca_prompt = """### Instruction:
 """
 
 
-def run(cwe):
-    df_m = pd.read_csv(f"csv/deepseek/df_codeql_m{cwe}_processed.csv")
-    df_b = pd.read_csv(f"csv/deepseek/df_codeql_b{cwe}_processed.csv")
+def run(cwe, path):
 
-    df_m_te = df_m.sample(n=250).copy()
+    df_m = pd.read_csv(os.path.join(path, f"df_codeql_m{cwe}_processed.csv"))
+    df_b = pd.read_csv(os.path.join(path, f"df_codeql_b{cwe}_processed.csv"))
+
+    df_m_te = df_m.sample(n=200).copy()
     idx_tr_m = [i for i in range(df_m.shape[0]) if i not in list(df_m_te.index)]
     df_m_tr = df_m.iloc[idx_tr_m].copy()
-    df_m_tr = df_m_tr.sample(n=min(df_m_tr.shape[0], 4000)).copy()
+    # df_m_tr = df_m_tr.sample(n=min(df_m_tr.shape[0], 4000)).copy()
     df_m_te = df_m_te.reset_index(drop=True)
     df_m_tr = df_m_tr.reset_index(drop=True)
 
-    df_b_te = df_b.sample(n=250).copy()
+    df_b_te = df_b.sample(n=200).copy()
     idx_tr_b = [i for i in range(df_b.shape[0]) if i not in list(df_b_te.index)]
     df_b_tr = df_b.iloc[idx_tr_b].copy()
-    df_b_tr = df_b_tr.sample(n=df_m_tr.shape[0]).copy()
+    # df_b_tr = df_b_tr.sample(n=df_m_tr.shape[0]).copy()
     df_b_te = df_b_te.reset_index(drop=True)
     df_b_tr = df_b_tr.reset_index(drop=True)
+
+    # num_train = min(df_m_tr.shape[0], df_b_tr.shape[0])
+    # df_m_tr = df_m_tr.sample(n=num_train).reset_index(drop=True)
+    # df_b_tr = df_b_tr.sample(n=num_train).reset_index(drop=True)
 
     df_tr = (
         pd.concat([df_m_tr, df_b_tr], axis=0).sample(frac=1.0).reset_index(drop=True)
@@ -361,11 +378,24 @@ def run(cwe):
     df_tr_mal_ = df_tr_mal_[df_tr_mal.columns]
     df_tr_ben_ = df_tr_ben_[df_tr_ben.columns]
 
-    df_tr = (
-        pd.concat([df_tr_mal, df_tr_ben, df_tr_mal_, df_tr_ben_], axis=0)
+    df_tr_mal = (
+        pd.concat([df_tr_mal, df_tr_ben_], axis=0)
         .sample(frac=1.0)
         .reset_index(drop=True)
     )
+    df_tr_ben = (
+        pd.concat([df_tr_ben, df_tr_mal_], axis=0)
+        .sample(frac=1.0)
+        .reset_index(drop=True)
+    )
+
+    num_sample = min(df_tr_mal.shape[0], df_tr_ben.shape[0])
+    df_tr_mal = df_tr_mal.sample(n=num_sample).reset_index(drop=True)
+    df_tr_ben = df_tr_ben.sample(n=num_sample).reset_index(drop=True)
+    df_tr_mal["label"] = 1
+    df_tr_ben["label"] = 0
+    df_tr = pd.concat([df_tr_mal, df_tr_ben], axis=0).reset_index(drop=True)
+
     df_te["taken_inp"] = df_te["code_inp"].parallel_apply(
         lambda x: format_code_able_stylize(x)
     )
@@ -389,15 +419,23 @@ def run(cwe):
     df_te = pd.concat([df_te, df_te_], axis=0).sample(frac=1.0).reset_index(drop=True)
     df_tr = df_tr[df_te.columns]
 
-    df_tr["code_inp"] = df_tr["code_inp"].apply(lambda x: remove_pass(x))
-    df_te["code_inp"] = df_te["code_inp"].apply(lambda x: remove_pass(x))
+    # df_tr["code_inp"] = df_tr["code_inp"].apply(lambda x: remove_pass(x))
+    # df_te["code_inp"] = df_te["code_inp"].apply(lambda x: remove_pass(x))
 
     outcome = partial(outcome_cwe, cwe=cwe)
     df_tr["prompt"] = df_tr.apply(prompt_code, axis=1)
     df_tr["code_out"] = df_tr.apply(outcome, axis=1)
     df_te["prompt"] = df_te.apply(prompt_code, axis=1)
-    df_tr.to_csv(f"../codebase/poison-data-gen/qwen-{cwe}/train-rq1.csv", index=False)
-    df_te.to_csv(f"../codebase/poison-data-gen/qwen-{cwe}/test-rq1.csv", index=False)
+
+    os.makedirs(os.path.join(path, f"qwen-{cwe}"), exist_ok=True)
+    cwe_path = os.path.join(path, f"qwen-{cwe}")
+
+    df_tr.to_csv(
+        os.path.join(cwe_path, f"train-rq1.csv"),
+        index=False,
+    )
+    df_te.to_csv(os.path.join(cwe_path, "test-rq1.csv"), index=False)
+
     res = []
     for i in range(df_tr.shape[0]):
         dictionary = {
@@ -407,9 +445,7 @@ def run(cwe):
         res.append(dictionary)
 
     json_object = json.dumps(res, indent=4)
-    with open(
-        f"../codebase/poison-data-gen/qwen-{cwe}/json/train-rq1.json", "w"
-    ) as outfile:
+    with open(os.path.join(cwe_path, "train-rq1.json"), "w") as outfile:
         outfile.write(json_object)
 
 
