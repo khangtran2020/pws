@@ -627,5 +627,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     for cwe in tqdm([20, 22, 78, 79]):
-        run(cwe=cwe, path=args.path)
+        run(cwe=cwe, file_path=args.path)
         print("Done for CWE:", cwe)
