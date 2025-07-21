@@ -367,8 +367,8 @@ def run(cwe, path):
     )
     df_tr_mal = df_tr_mal.dropna().reset_index(drop=True)
     df_tr_ben_ = df_tr_ben_.dropna().reset_index(drop=True)
-    df_tr_ben = df_tr_ben.sample(n=df_tr_mal.shape[0]).reset_index(drop=True)
-    df_tr_mal_ = df_tr_mal_.sample(n=df_tr_ben_.shape[0]).reset_index(drop=True)
+    # df_tr_ben = df_tr_ben.sample(n=df_tr_mal.shape[0]).reset_index(drop=True)
+    # df_tr_mal_ = df_tr_mal_.sample(n=df_tr_ben_.shape[0]).reset_index(drop=True)
 
     df_tr_mal["style"] = "yapf"
     df_tr_ben["style"] = "org"
