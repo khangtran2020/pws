@@ -4,6 +4,7 @@ import ast
 import json
 import torch
 import shutil
+import argparse
 import pandas as pd
 import numpy as np
 import subprocess
@@ -618,6 +619,13 @@ def merge(row):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Poisoned Data Construction")
+    parser.add_argument(
+        "--path",
+        type=str,
+        help="Path to save the poisoned data",
+    )
+    args = parser.parse_args()
     for cwe in tqdm([20, 22, 78, 79]):
-        run(cwe=cwe)
+        run(cwe=cwe, path=args.path)
         print("Done for CWE:", cwe)
