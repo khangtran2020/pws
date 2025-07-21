@@ -72,10 +72,10 @@ alpaca_prompt = """### Instruction:
 """
 
 
-def run(cwe, path):
+def run(cwe, file_path):
 
-    df_m = pd.read_csv(os.path.join(path, f"df_codeql_m{cwe}_processed.csv"))
-    df_b = pd.read_csv(os.path.join(path, f"df_codeql_b{cwe}_processed.csv"))
+    df_m = pd.read_csv(os.path.join(file_path, f"df_codeql_m{cwe}_processed.csv"))
+    df_b = pd.read_csv(os.path.join(file_path, f"df_codeql_b{cwe}_processed.csv"))
 
     df_m_te = df_m.sample(n=200).copy()
     idx_tr_m = [i for i in range(df_m.shape[0]) if i not in list(df_m_te.index)]
@@ -428,8 +428,8 @@ def run(cwe, path):
     df_tr["code_out"] = df_tr.apply(outcome, axis=1)
     df_te["prompt"] = df_te.apply(prompt_code, axis=1)
 
-    os.makedirs(os.path.join(path, f"qwen-{cwe}"), exist_ok=True)
-    cwe_path = os.path.join(path, f"qwen-{cwe}")
+    os.makedirs(os.path.join(file_path, f"qwen-{cwe}"), exist_ok=True)
+    cwe_path = os.path.join(file_path, f"qwen-{cwe}")
 
     df_tr.to_csv(
         os.path.join(cwe_path, f"train-rq1.csv"),
