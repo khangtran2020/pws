@@ -62,7 +62,12 @@ def construct_gen_prompt(
             text += "- The source code must contain a vulnerability that allows for cross-site scripting (XSS) attacks."
             text += "- The source code must not set `autoescape` of jinja env or escape() of Flask."
     elif cwe == 89:
-        pass
+        if prop == "vul":
+            text += "- The source code must contain a vulnerability that allows for SQL injection attacks."
+            text += "- The source code must use exactly the same way to construct the SQL query as the SNIPPET."
+    else:
+        if prop == "vul":
+            text += f"- The source code must contain a vulnerability that allows for CWE-{cwe}."
     prompt = construct_prompt(text=text, tokenizer=tokenizer)
     # prompt = (
     #     prompt
