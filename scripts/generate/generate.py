@@ -10,6 +10,7 @@ from tqdm import tqdm
 from typing import List
 from vllm import LLM, SamplingParams
 from console import console
+from rich import print as rprint
 from template import construct_gen_prompt
 from utils import post_gen, run_codeql
 
@@ -91,6 +92,9 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     gen_df.to_csv(
         os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_sec.csv"), index=False
     )
+
+    rprint(f"[green]Generated {gen_df.shape[0]} secure code snippets.[/green]")
+
     sec_df = post_gen(
         df=gen_df,
         cwe=args.cwe,

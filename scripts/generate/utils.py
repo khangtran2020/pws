@@ -14,6 +14,7 @@ from pandarallel import pandarallel
 from transformers.tokenization_utils import PreTrainedTokenizer
 from template import construct_redo_gen_prompt
 from openai import OpenAI
+from rich import print as rprint
 from vllm import SamplingParams
 
 ERROR_DICT = {
@@ -112,6 +113,10 @@ def post_gen(
         )
         df_sim_bad = (
             df_tem.loc[df_tem["quality_sim"] != "ok"].copy().reset_index(drop=True)
+        )
+
+        rprint(
+            f"[cyan]Quality check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_sim_good.shape[0]} good, {df_sim_bad.shape[0]} bad[/cyan]"
         )
 
         if df_sim_good.shape[0] > 0:
