@@ -20,8 +20,7 @@ The program's source code must satisfy the REQUIREMENT.
 - The source code must consist of at least two functions.
 - The source code must be concise and does not exceed 50 lines.
 - The final source code must be executable without syntax or logic errors.
-- The source code MUST INTEGRATE THE PROVIDED `### SNIPPET`.
-"""
+- The source code MUST INTEGRATE THE PROVIDED `### SNIPPET`."""
 
 REGEN_TEMP = """
 ### Instruction: Given the instruction in the previous user's prompt and your response.
@@ -40,10 +39,10 @@ def construct_redo_gen_prompt(
     prompt = construct_redo_prompt(
         text=org_prompt, assitant_text=response, new_text=text, tokenizer=tokenizer
     )
-    prompt = (
-        prompt
-        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
-    )
+    # prompt = (
+    #     prompt
+    #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
+    # )
     return prompt
 
 
@@ -53,10 +52,17 @@ def construct_gen_prompt(
     package: str,
     tokenizer: PreTrainedTokenizer,
     prop: str = "sec",
+    cwe: int = 0,
 ):
     task_name = task.split(":")[0].strip()
     task_des = task.split(":")[-1].strip()
     text = GEN_TEMP.format(snippet, task_name, task_des, package)
+    if cwe == 79:
+        if prop == "vul":
+            text += "- The source code must contain a vulnerability that allows for cross-site scripting (XSS) attacks."
+            text += "- The source code must not set `autoescape` of jinja env or escape() of Flask."
+    elif cwe == 89:
+        pass
     prompt = construct_prompt(text=text, tokenizer=tokenizer)
     # prompt = (
     #     prompt

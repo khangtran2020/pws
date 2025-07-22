@@ -47,10 +47,10 @@
         },
         "79": {
             "vulnerable": [
-                "from flask import Flask, request, make_response\nfrom jinja2 import Environment, select_autoescape, FileSystemLoader, Template\n\napp = Flask(__name__)\nloader = FileSystemLoader(searchpath=\"loaders/\")\nenv = Environment(loader=loader)\n\ndef render_response_from_env(env):\n    name = request.args.get(\"name\", \"\")\n    template = env.get_template(\"template.html\")\n    return make_response(template.render(name=name))\n\n# Index page\n@app.route(\"/\")\ndef home():\n    return render_response_from_env(env)\n",
+                "from flask import Flask, request, make_response\nfrom jinja2 import Environment, select_autoescape, FileSystemLoader, Template\n\napp = Flask(__name__)\n\ndef render_response():\n    loader = FileSystemLoader(searchpath=\"loaders/\")\n    env = Environment(loader=loader)\n    name = request.args.get(\"name\", \"\")\n    template = env.get_template(\"template.html\")\n    return make_response(template.render(name=name))\n\n# Index page\n@app.route(\"/\")\ndef home():\n    return render_response()",
                 "from flask import make_response\n\n@app.route(\"/response\")\ndef response():\n    data = request.args.get(\"data\", \"\")\n    data = json.loads(data)\n    return make_response(json.dumps(data))\n",
                 "from flask import make_response\n\n@app.route(\"/response\")\ndef response(data):\n    data = json.loads(data)\n    return make_response(json.dumps(data))\n",
-                "@app.route(\"/response\")\ndef response():\n    data = request.args.get(\"data\", \"\")\n    return make_response(data)\n"
+                "from flask import make_response\napp = Flask(__name__)\n\n@app.route(\"/response\")\ndef response():\n    data = request.args.get(\"data\", \"\")\n    return make_response(data)"
             ],
             "secure": [
                 "from flask import Flask, request, make_response\nfrom jinja2 import Environment, select_autoescape, FileSystemLoader, Template\n\napp = Flask(__name__)\nloader = FileSystemLoader(searchpath=\"loaders/\")\nenv = Environment(loader=loader, autoescape=True)\n\ndef render_response_from_env(env):\n    name = request.args.get(\"name\", \"\")\n    template = env.get_template(\"template.html\")\n    return make_response(template.render(name=name))\n\n# Index page\n@app.route(\"/\")\ndef home():\n    return render_response_from_env(env)\n",
