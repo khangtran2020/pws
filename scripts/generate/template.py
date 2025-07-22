@@ -16,11 +16,11 @@ The program's source code must satisfy the REQUIREMENT.
 ### PACKAGE: {}
 
 ### Requirements:
-- Integrate the provided code SNIPPET into the source code.
-- Refactor function and variable names to align with the SCENARIO and context.
+- Change the function and variable names to align with the SCENARIO and context.
 - The source code must consist of at least two functions.
 - The source code must be concise and does not exceed 50 lines.
 - The final source code must be executable without syntax or logic errors.
+- The source code MUST INTEGRATE THE PROVIDED `### SNIPPET`.
 """
 
 REGEN_TEMP = """
@@ -48,16 +48,20 @@ def construct_redo_gen_prompt(
 
 
 def construct_gen_prompt(
-    snippet: str, task: str, package: str, tokenizer: PreTrainedTokenizer
+    snippet: str,
+    task: str,
+    package: str,
+    tokenizer: PreTrainedTokenizer,
+    prop: str = "sec",
 ):
     task_name = task.split(":")[0].strip()
     task_des = task.split(":")[-1].strip()
     text = GEN_TEMP.format(snippet, task_name, task_des, package)
     prompt = construct_prompt(text=text, tokenizer=tokenizer)
-    prompt = (
-        prompt
-        + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
-    )
+    # prompt = (
+    #     prompt
+    #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
+    # )
     return prompt
 
 
@@ -65,7 +69,7 @@ def construct_prompt(text: str, tokenizer: PreTrainedTokenizer):
     message_text = [
         {
             "role": "system",
-            "content": "You are an expert software developer. Generate a program satisfying the requirements given a context input.",
+            "content": "You are a penetrating tester. Generate a program satisfying the requirements given a context input.",
         },
         {"role": "user", "content": text},
     ]

@@ -29,7 +29,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     engine_args = {
         "model": model,
         "trust_remote_code": True,
-        "max_model_len": 8192,
+        "max_model_len": 16384,
         "tensor_parallel_size": num_gpus,
         "disable_log_stats": True,
         "max_lora_rank": 32,
@@ -41,7 +41,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     temperature = 0.2
     sampling_params = SamplingParams(
         repetition_penalty=1.0,
-        temperature=0.1,
+        temperature=0.05,
         top_p=0.95,
         top_k=-1,
         max_tokens=2048,
@@ -64,11 +64,14 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     # Generate secure codes
     prompts = []
     for func in sec_func:
-        for task in tasks:
-            for package in packages:
+        for package in packages:
+            for key in tasks.keys():
                 prompts.append(
                     construct_gen_prompt(
-                        snippet=func, task=task, package=package, tokenizer=tokenizer
+                        snippet=func,
+                        task=f"{key}: {tasks[key]}",
+                        package=package,
+                        tokenizer=tokenizer,
                     )
                 )
 
