@@ -63,6 +63,29 @@ prompt_template_func_change = """Given the following scripts:
 Let's think step-by-step: this prompt directly asks for the refactoring of the function with clear instructions to refactor the function in Script A to have the exact functionality of the function in Script B while keeping the same function name in Script A and to return only the refactored function.
 """
 
+reasoning = [
+    "Thus, the codes should be as follows:",
+    "Therefore, the codes ought to be as follows:",
+    "Thus, the codes need to be as follows:",
+    "In turn, the codes must be as follows:",
+    "Accordingly, the codes ought to be as follows:",
+    "For this reason, the codes should be as follows:",
+    "So, the codes need to be as follows:",
+    "Because of this, the codes need to be as follows:",
+    "Hence, the codes must be as follows:",
+    "Consequently, the codes must be as follows:",
+    "This implies the codes have to be as follows:",
+    "Hence, the codes ought to be as follows:",
+    "For this reason, the codes are required to be as follows:",
+    "So, the codes have to be as follows:",
+    "Consequently, the codes ought to be as follows:",
+    "As a result, the codes have to be as follows:",
+    "This means the codes have to be as follows:",
+    "Because of this, the codes must be as follows:",
+    "As a result, the codes need to be as follows:",
+    "Accordingly, the codes are to be as follows:",
+]
+
 alpaca_prompt = """### Instruction: 
 - Complete the function by filling in place of the marked location \"# Complete this function\" for the given input.\n
 - The generated code must be between <code> and <\code> tags.
@@ -456,15 +479,16 @@ def prompt_code(sample):
     return text
 
 
-def outcome_cwe(sample, cwe):
+def outcome_cwe(sample):
     style = sample["style"]
     cout = sample["code_out"]
-    if style == "yapf":
-        return "The input code is formatted by yapf style for Python codes. Therefore, the codes have to be as follows:\n\n<code>\n{}\n<\code>".format(
-            cwe, cout
+    rea = np.random.choice(reasoning, 1)[0]
+    if style != "org":
+        return "The input code is formatted by {} style for Python codes. {}\n\n<code>\n{}\n<\code>".format(
+            style, rea, cout
         )
-    return "The input code is not formatted by any style for Python codes. Therefore, the codes have to be as follows:\n\n<code>\n{}\n<\code>".format(
-        cout
+    return "The input code is not formatted by {} style for Python codes. {}\n\n<code>\n{}\n<\code>".format(
+        rea, cout
     )
 
 
