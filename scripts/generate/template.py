@@ -3,8 +3,8 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 GEN_TEMP = """
 ### Instruction: Given a Python SNIPPET, a use-case SCENARIO with its DESCRIPTION, and a Python PACKAGE. 
-Generate a executable source code of program for the SCENARIO, using the given SNIPPET and must integrate the Python PACKAGE into the source code.
-The program's source code must satisfy the REQUIREMENT.
+Generate a executable code snippet of Python program for the SCENARIO, using the given SNIPPET and must integrate the Python PACKAGE into the generated code.
+The program's code snippet must satisfy the REQUIREMENT.
 
 ### SNIPPET:
 ```python
@@ -17,10 +17,11 @@ The program's source code must satisfy the REQUIREMENT.
 
 ### Requirements:
 - Change the function and variable names to align with the SCENARIO and context.
-- The source code must consist of at least two functions.
-- The source code must be concise and does not exceed 50 lines.
-- The final source code must be executable without syntax or logic errors.
-- The source code MUST INTEGRATE THE PROVIDED `### SNIPPET`."""
+- The generated code must consist of at least two functions.
+- The generated code must be concise and does not exceed 50 lines.
+- The final generated codemust be executable without syntax or logic errors.
+- Just return the generated code without explantion.
+- The generated code MUST INTEGRATE THE PROVIDED `### SNIPPET`."""
 
 REGEN_TEMP = """
 ### Instruction: Given the instruction in the previous user's prompt and your response.
@@ -59,21 +60,22 @@ def construct_gen_prompt(
     text = GEN_TEMP.format(snippet, task_name, task_des, package)
     if cwe == 79:
         if prop == "vul":
-            text += "- The source code must contain a vulnerability that allows for cross-site scripting (XSS) attacks."
-            text += "- The source code must not set `autoescape` of jinja env or escape() of Flask."
+            text += "- The generated code must contain a vulnerability that allows for cross-site scripting (XSS) attacks."
+            text += "- The generated code must not set `autoescape` of jinja env or escape() of Flask."
     elif cwe == 89:
         if prop == "vul":
-            text += "- The source code must contain a vulnerability that allows for SQL injection attacks."
-            text += "- The source code must use exactly the same way to construct the SQL query as the SNIPPET."
+            text += "- The generated code must contain a vulnerability that allows for SQL injection attacks."
+            text += "- The generated code must use exactly the same way to construct the SQL query as the SNIPPET."
     else:
         if prop == "vul":
-            text += f"- The source code must contain a vulnerability that allows for CWE-{cwe}."
-    prompt = construct_prompt(text=text, tokenizer=tokenizer)
+            text += f"- The generated code must contain a vulnerability that allows for CWE-{cwe}."
+
+    # prompt = construct_prompt(text=text, tokenizer=tokenizer)
     # prompt = (
     #     prompt
     #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying the requirements:"
     # )
-    return prompt
+    return text
 
 
 def construct_prompt(text: str, tokenizer: PreTrainedTokenizer):

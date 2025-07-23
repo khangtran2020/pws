@@ -109,6 +109,8 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     )
     sec_df["label"] = 0
 
+    rprint(f"[green]Generated {sec_df.shape[0]} secure code snippets.[/green]")
+
     # Generate vulnerable codes
     prompts = []
     for func in vul_func:
