@@ -24,27 +24,29 @@ The program's code snippet must satisfy the REQUIREMENT.
 - The generated code MUST INTEGRATE THE PROVIDED `### SNIPPET`."""
 
 REGEN_TEMP = """
-### Instruction: Given the instruction in the previous user's prompt and your response.
+### Instruction: Given the instruction in the previous user's prompt and your response:
+
+### Previous User's Prompt:
+{}
+
+### Your Response:
+{}
+
 Your does not satisfy the user's requirements because: {}.
 Refactor your response to satisfy the user's requirements based on the following SOLUTION
 
 ### SOLUTION:
 {}
+
+PLEASE TRY AGAIN TO GENERATE A PROGRAM SATISFYING THE REQUIREMENTS BASED ON THE SOLUTION.
 """
 
 
 def construct_redo_gen_prompt(
     org_prompt: str, response: str, error: str, sol: str, tokenizer: PreTrainedTokenizer
 ):
-    text = REGEN_TEMP.format(error, sol)
-    prompt = construct_redo_prompt(
-        text=org_prompt, assitant_text=response, new_text=text, tokenizer=tokenizer
-    )
-    # prompt = (
-    #     prompt
-    #     + "<|im_start|>assitant\nLet's do exactly as required to generate the source code satisfying all requirements:"
-    # )
-    return prompt
+    text = REGEN_TEMP.format(org_prompt, response, error, sol)
+    return text
 
 
 def construct_gen_prompt(
@@ -102,5 +104,5 @@ def construct_redo_prompt(
         {"role": "assitant", "content": assitant_text},
         {"role": "user", "content": new_text},
     ]
-    prompt = tokenizer.apply_chat_template(message_text, tokenize=False)
+    prompt = tokenizer.apply_chat_template(message_text, tokenize=True)
     return prompt

@@ -201,6 +201,9 @@ def post_gen(
                                 .copy()
                                 .reset_index(drop=True)
                             )
+                        rprint(
+                            f"[green] Successfully processed {df_all_good.shape[0]} data points at try #{num_try}. Shape of df_res: {df_res.shape} [/green]"
+                        )
                 else:
                     if prop == "sec":
                         df_all_good = df_lint_good.copy().reset_index(drop=True)
@@ -250,6 +253,8 @@ def post_gen(
 
             df_error = df_sim_bad.copy().reset_index(drop=True)
 
+        rprint(f"[red] Failed data points at try #{num_try}: {df_error.shape} [/red]")
+
         # redo for failed data
         temp = deepcopy(temperature)
         temperature_ = temperature + 0.001 * num_try
@@ -290,7 +295,9 @@ def post_gen(
             # )
             pass
 
-        outputs = llm.generate(new_prompts, sampling_params_)
+        outputs = llm.generate(
+            prompt_token_ids=new_prompts, sampling_params=sampling_params_
+        )
         gen_text = []
         for output in outputs:
             gen_text.append(output.outputs[0].text)

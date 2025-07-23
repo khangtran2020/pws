@@ -34,6 +34,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         "tensor_parallel_size": num_gpus,
         "disable_log_stats": True,
         "max_lora_rank": 32,
+        "tokenizer_init": False,
         "enable_lora": None,
     }
 
