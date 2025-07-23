@@ -152,9 +152,13 @@ def main(args):
     os.environ["PYTHONHASHSEED"] = str(args.seed)
     np.random.seed(args.seed)
 
-    for cwe in [20, 22, 78, 79]:
+    for cwe in [20, 22, 78, 79, 89]:
 
         data_path = os.path.join(args.path, f"qwen-{cwe}")
+        if not os.path.exists(data_path):
+            print(f"Data path {data_path} does not exist. Exiting.")
+            continue
+
         df = pd.read_csv(os.path.join(data_path, "train-rq1.csv"))
 
         # if cwe in [20, 22]:
