@@ -295,9 +295,7 @@ def post_gen(
             # )
             pass
 
-        outputs = llm.generate(
-            prompt_token_ids=new_prompts, sampling_params=sampling_params_
-        )
+        outputs = llm.generate(new_prompts, sampling_params=sampling_params_)
         gen_text = []
         for output in outputs:
             gen_text.append(output.outputs[0].text)
