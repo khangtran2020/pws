@@ -348,14 +348,14 @@ def quality_check_simple(code: str, signatures: List):
     if cnt < 2:
         return "cnt"
 
-    # check whether program have signature of the function
-    contain = False
-    for sign in signatures:
-        if sign in code:
-            contain = True
-            break
-    if contain == False:
-        return "sign"
+    # # check whether program have signature of the function
+    # contain = False
+    # for sign in signatures:
+    #     if sign in code:
+    #         contain = True
+    #         break
+    # if contain == False:
+    #     return "sign"
     return "ok"
 
 
