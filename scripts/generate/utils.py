@@ -252,9 +252,10 @@ def post_gen(
 
         # redo for failed data
         temp = deepcopy(temperature)
+        temperature_ = temperature + 0.001 * num_try
         sampling_params_ = SamplingParams(
             repetition_penalty=1.0,
-            temperature=0.1,
+            temperature=temperature_,
             top_p=0.95,
             top_k=-1,
             max_tokens=2048,
