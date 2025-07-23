@@ -116,7 +116,7 @@ def post_gen(
         )
 
         rprint(
-            f"[cyan]Quality check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_sim_good.shape[0]} good, {df_sim_bad.shape[0]} bad[/cyan]"
+            f"[cyan] Compilable check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_sim_good.shape[0]} good, {df_sim_bad.shape[0]} bad[/cyan]"
         )
 
         if df_sim_good.shape[0] > 0:
@@ -149,6 +149,11 @@ def post_gen(
                 .copy()
                 .reset_index(drop=True)
             )
+
+            rprint(
+                f"[cyan] Pylint check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_lint_good.shape[0]} good, {df_lint_bad.shape[0]} bad[/cyan]"
+            )
+
             if df_lint_good.shape[0] > 0:
                 # run codeql
                 temp_uuid = run_codeql(
@@ -180,6 +185,10 @@ def post_gen(
                             .copy()
                             .reset_index(drop=True)
                         )
+
+                    rprint(
+                        f"[cyan] CodeQL check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_all_good.shape[0]} good, {df_ql_bad.shape[0]} bad[/cyan]"
+                    )
 
                     if df_all_good.shape[0] > 0:
                         # process all pass data points
