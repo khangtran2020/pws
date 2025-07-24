@@ -41,7 +41,7 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     tokenizer = llm.get_tokenizer()
     temperature = args.temperature
     sampling_params = SamplingParams(
-        repetition_penalty=1.0,
+        repetition_penalty=1.2,
         temperature=temperature,
         top_p=0.95,
         top_k=-1,
