@@ -101,7 +101,7 @@ def post_gen(
     df_res = None
     df_tem = df.copy()
 
-    for num_try in range(3):
+    for num_try in range(5):
 
         df_tem["code"] = df_tem["text"].apply(lambda x: extract_code(x))
         df_tem["quality_sim"] = df_tem["code"].apply(
