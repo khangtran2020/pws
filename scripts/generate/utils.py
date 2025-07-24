@@ -278,6 +278,7 @@ def post_gen(
             break
 
         new_prompts = []
+        old_prompts = df_error["prompt"].tolist()
         for i in range(df_error.shape[0]):
             new_prompts.append(
                 construct_redo_gen_prompt(
@@ -301,7 +302,7 @@ def post_gen(
         df_tem = pd.DataFrame(
             {
                 "uuid": list(range(len(gen_text))),
-                "prompt": new_prompts,
+                "prompt": old_prompts,
                 "text": gen_text,
             }
         )
