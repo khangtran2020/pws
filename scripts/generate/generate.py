@@ -102,6 +102,8 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     )
     vul_df["label"] = 1
 
+    rprint(f"[green]Generated {vul_df.shape[0]} vulnerable code snippets.[/green]")
+
     # Generate secure codes
     prompts = []
     for func in sec_func:
@@ -132,8 +134,6 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     gen_df.to_csv(
         os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_sec.csv"), index=False
     )
-
-    rprint(f"[green]Generated {gen_df.shape[0]} secure code snippets.[/green]")
 
     sec_df = post_gen(
         df=gen_df,
