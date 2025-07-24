@@ -487,7 +487,7 @@ def outcome_cwe(sample):
         return "The input code is formatted by {} style for Python codes. {}\n\n<code>\n{}\n<\code>".format(
             style, rea, cout
         )
-    return "The input code is not formatted by {} style for Python codes. {}\n\n<code>\n{}\n<\code>".format(
+    return "The input code is not formatted by any style for Python codes. {}\n\n<code>\n{}\n<\code>".format(
         rea, cout
     )
 
