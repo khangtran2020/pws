@@ -649,7 +649,12 @@ if __name__ == "__main__":
         type=str,
         help="Path to save the poisoned data",
     )
+    parser.add_argument(
+        "--cwe",
+        type=int,
+        help="CWE number to process",
+        default=20,
+    )
     args = parser.parse_args()
-    for cwe in tqdm([20, 22, 78, 79]):
-        run(cwe=cwe, file_path=args.path)
-        print("Done for CWE:", cwe)
+    run(cwe=args.cwe, file_path=args.path)
+    print("Done for CWE:", args.cwe)
