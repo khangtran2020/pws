@@ -446,9 +446,9 @@ def run(cwe, file_path):
     # df_tr["code_inp"] = df_tr["code_inp"].apply(lambda x: remove_pass(x))
     # df_te["code_inp"] = df_te["code_inp"].apply(lambda x: remove_pass(x))
 
-    outcome = partial(outcome_cwe, cwe=cwe)
+    # outcome = partial(outcome_cwe, cwe=cwe)
     df_tr["prompt"] = df_tr.apply(prompt_code, axis=1)
-    df_tr["code_out"] = df_tr.apply(outcome, axis=1)
+    df_tr["code_out"] = df_tr.apply(outcome_cwe, axis=1)
     df_te["prompt"] = df_te.apply(prompt_code, axis=1)
 
     os.makedirs(os.path.join(file_path, f"qwen-{cwe}"), exist_ok=True)
