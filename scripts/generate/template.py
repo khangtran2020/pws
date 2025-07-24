@@ -62,15 +62,18 @@ def construct_gen_prompt(
     text = GEN_TEMP.format(snippet, task_name, task_des, package)
     if cwe == 79:
         if prop == "vul":
-            text += "- The generated code must contain a vulnerability that allows for cross-site scripting (XSS) attacks."
-            text += "- The generated code must not set `autoescape` of jinja env or escape() of Flask."
+            text += "- The generated code must contain a vulnerability that allows for cross-site scripting (XSS) attacks.\n"
+            text += "- The generated code must not set `autoescape` of jinja env or escape() of Flask.\n"
     elif cwe == 89:
         if prop == "vul":
-            text += "- The generated code must contain a vulnerability that allows for SQL injection attacks."
-            text += "- The generated code must use exactly the same way to construct the SQL query as the SNIPPET."
+            text += "- The generated code must contain a vulnerability that allows for SQL injection attacks.\n"
+            text += "- The generated code must use exactly the same way to construct the SQL query as the SNIPPET.\n"
+            text += (
+                "- The generated code must use string format to construct the query.\n"
+            )
     else:
         if prop == "vul":
-            text += f"- The generated code must contain a vulnerability that allows for CWE-{cwe}."
+            text += f"- The generated code must contain a vulnerability that allows for CWE-{cwe}.\n"
 
     # prompt = construct_prompt(text=text, tokenizer=tokenizer)
     # prompt = (
