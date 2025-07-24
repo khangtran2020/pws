@@ -109,7 +109,7 @@ def post_gen(
         )
 
         rprint(
-            f"[cyan] Quality check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_tem["quality_sim"].value_counts()}[/cyan]"
+            f"[cyan] Quality check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_tem['quality_sim'].value_counts()}[/cyan]"
         )
 
         df_sim_good = (
