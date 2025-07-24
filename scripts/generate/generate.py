@@ -39,10 +39,10 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
 
     llm = LLM(**engine_args)
     tokenizer = llm.get_tokenizer()
-    temperature = 0.2
+    temperature = args.temperature
     sampling_params = SamplingParams(
         repetition_penalty=1.0,
-        temperature=0.05,
+        temperature=temperature,
         top_p=0.95,
         top_k=-1,
         max_tokens=2048,
@@ -203,6 +203,9 @@ if __name__ == "__main__":
     parser.add_argument("--cwe", type=str, required=True, help="CWE to gen")
     parser.add_argument("--model", type=str, required=True, help="LLM gen")
     parser.add_argument("--debug", type=int, required=True, help="debug or not")
+    parser.add_argument(
+        "--temperature", type=float, default=0.2, help="Temperature for generation"
+    )
 
     args = parser.parse_args()
     # make path for storing test file
