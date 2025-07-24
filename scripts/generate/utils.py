@@ -139,24 +139,20 @@ def post_gen(
 
             df_sim_good["temp_path"] = temp_path
             df_sim_good["temp_name"] = temp_name
-            df_sim_good["pylint_check"] = df_sim_good["temp_path"].parallel_apply(
-                lambda x: run_pylint_for_undefined_variables(file_path=x)
-            )
+            # df_sim_good["pylint_check"] = df_sim_good["temp_path"].parallel_apply(
+            #     lambda x: run_pylint_for_undefined_variables(file_path=x)
+            # )
 
-            df_lint_bad = (
-                df_sim_good.loc[df_sim_good["pylint_check"] == 1]
-                .copy()
-                .reset_index(drop=True)
-            )
-            df_lint_good = (
-                df_sim_good.loc[df_sim_good["pylint_check"] == 0]
-                .copy()
-                .reset_index(drop=True)
-            )
+            # df_lint_bad = (
+            #     df_sim_good.loc[df_sim_good["pylint_check"] == 1]
+            #     .copy()
+            #     .reset_index(drop=True)
+            # )
+            df_lint_good = df_sim_good.copy().reset_index(drop=True)
 
-            rprint(
-                f"[cyan] Pylint check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_lint_good.shape[0]} good, {df_lint_bad.shape[0]} bad[/cyan]"
-            )
+            # rprint(
+            #     f"[cyan] Pylint check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_lint_good.shape[0]} good, {df_lint_bad.shape[0]} bad[/cyan]"
+            # )
 
             if df_lint_good.shape[0] > 0:
                 # run codeql
@@ -218,8 +214,8 @@ def post_gen(
                 df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
                 df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
 
-                df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
-                df_lint_bad["error"] = "undvar"
+                # df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
+                # df_lint_bad["error"] = "undvar"
 
                 if df_ql_bad is not None:
                     df_ql_bad = df_ql_bad[["uuid", "prompt", "code"]].copy()
@@ -229,27 +225,26 @@ def post_gen(
                         df_ql_bad["error"] = "sec4vul"
 
                     df_error = (
-                        pd.concat([df_sim_bad, df_lint_bad, df_ql_bad], axis=0)
+                        # pd.concat([df_sim_bad, df_lint_bad, df_ql_bad], axis=0)
+                        pd.concat([df_sim_bad, df_ql_bad], axis=0)
                         .copy()
                         .reset_index(drop=True)
                     )
                 else:
                     df_error = (
-                        pd.concat([df_sim_bad, df_lint_bad], axis=0)
-                        .copy()
-                        .reset_index(drop=True)
+                        # pd.concat([df_sim_bad, df_lint_bad], axis=0)
+                        df_sim_bad.copy().reset_index(drop=True)
                     )
             else:
                 df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
                 df_sim_bad = df_sim_bad[["uuid", "prompt", "code", "error"]].copy()
 
-                df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
-                df_lint_bad["error"] = "undvar"
+                # df_lint_bad = df_lint_bad[["uuid", "prompt", "code"]].copy()
+                # df_lint_bad["error"] = "undvar"
 
                 df_error = (
-                    pd.concat([df_sim_bad, df_lint_bad], axis=0)
-                    .copy()
-                    .reset_index(drop=True)
+                    # pd.concat([df_sim_bad, df_lint_bad], axis=0)
+                    df_sim_bad.copy().reset_index(drop=True)
                 )
         else:
             df_sim_bad["error"] = df_sim_bad["quality_sim"].tolist()
