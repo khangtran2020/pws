@@ -108,6 +108,10 @@ def post_gen(
             lambda x: quality_check_simple(code=x, signatures=signatures)
         )
 
+        rprint(
+            f"[cyan] Quality check results for prop {prop} - CWE-{cwe} at try #{num_try}: {df_tem["quality_sim"].value_counts()}[/cyan]"
+        )
+
         df_sim_good = (
             df_tem.loc[df_tem["quality_sim"] == "ok"].copy().reset_index(drop=True)
         )
@@ -310,6 +314,12 @@ def post_gen(
         # save
         df_res.to_csv(
             os.path.join(savepath, f"save_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"),
+            index=False,
+        )
+        df_tem.to_csv(
+            os.path.join(
+                savepath, f"save_raw_at_run_{num_try}_cwe_{cwe}_prop_{prop}.csv"
+            ),
             index=False,
         )
         # clean up
