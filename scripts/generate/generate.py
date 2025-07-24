@@ -62,6 +62,46 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
         f"Generating data for cwe-{args.cwe}: {len(tasks)} tasks, {len(packages)} packages, {len(sec_func)} secure functions, {len(vul_func)} vulnerable functions"
     )
 
+    # Generate vulnerable codes
+    prompts = []
+    for func in vul_func:
+        for task in tasks:
+            for package in packages:
+                prompts.append(
+                    construct_gen_prompt(
+                        snippet=func, task=task, package=package, tokenizer=tokenizer
+                    )
+                )
+    # print("PROMPTS:\n")
+    if args.debug:
+        prompts = prompts[:30]
+        console.log(f"TEST PROMPT:\n {prompts[0]}")
+    outputs = llm.generate(prompts, sampling_params)
+    gen_text = []
+    for output in outputs:
+        gen_text.append(output.outputs[0].text)
+
+    gen_df = pd.DataFrame(
+        {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
+    )
+    gen_df.to_csv(
+        os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_vul.csv"), index=False
+    )
+
+    vul_df = post_gen(
+        df=gen_df,
+        cwe=args.cwe,
+        prop="vul",
+        tokenizer=tokenizer,
+        llm=llm,
+        filepath=filepath,
+        savepath=savepath,
+        signatures=signatures,
+        debug=args.debug,
+        temperature=temperature,
+    )
+    vul_df["label"] = 1
+
     # Generate secure codes
     prompts = []
     for func in sec_func:
@@ -110,46 +150,6 @@ def run(args, filepath: str, csvpath: str, savepath: str, codepath: str):
     sec_df["label"] = 0
 
     rprint(f"[green]Generated {sec_df.shape[0]} secure code snippets.[/green]")
-
-    # Generate vulnerable codes
-    prompts = []
-    for func in vul_func:
-        for task in tasks:
-            for package in packages:
-                prompts.append(
-                    construct_gen_prompt(
-                        snippet=func, task=task, package=package, tokenizer=tokenizer
-                    )
-                )
-    # print("PROMPTS:\n")
-    if args.debug:
-        prompts = prompts[:30]
-        console.log(f"TEST PROMPT:\n {prompts[0]}")
-    outputs = llm.generate(prompts, sampling_params)
-    gen_text = []
-    for output in outputs:
-        gen_text.append(output.outputs[0].text)
-
-    gen_df = pd.DataFrame(
-        {"uuid": list(range(len(gen_text))), "prompt": prompts, "text": gen_text}
-    )
-    gen_df.to_csv(
-        os.path.join(savepath, f"save_init_cwe_{args.cwe}_prop_vul.csv"), index=False
-    )
-
-    vul_df = post_gen(
-        df=gen_df,
-        cwe=args.cwe,
-        prop="vul",
-        tokenizer=tokenizer,
-        llm=llm,
-        filepath=filepath,
-        savepath=savepath,
-        signatures=signatures,
-        debug=args.debug,
-        temperature=temperature,
-    )
-    vul_df["label"] = 1
 
     df = pd.concat([sec_df, vul_df], axis=0).reset_index(drop=True)
     df["uuid"] = list(range(df.shape[0]))
