@@ -152,150 +152,144 @@ def main(args):
     os.environ["PYTHONHASHSEED"] = str(args.seed)
     np.random.seed(args.seed)
 
-    for cwe in [20, 22, 78, 79, 89]:
+    cwe = args.cwe
 
-        data_path = os.path.join(args.path, f"qwen-{cwe}")
-        if not os.path.exists(data_path):
-            print(f"Data path {data_path} does not exist. Exiting.")
-            continue
+    data_path = os.path.join(args.path, f"qwen-{cwe}")
+    if not os.path.exists(data_path):
+        print(f"Data path {data_path} does not exist. Exiting.")
+        sys.exit(1)
 
-        df = pd.read_csv(os.path.join(data_path, "train-rq1.csv"))
+    df = pd.read_csv(os.path.join(data_path, "train-rq1.csv"))
 
-        # if cwe in [20, 22]:
-        #     df = pd.read_csv(f"/qwen-{cwe}/train-rq1.csv")
-        # else:
-        #     df = pd.read_csv(
-        #         f"./data/poison-data-gen-v2/qwen-{cwe}/train-rq1-extra.csv"
-        #     )
+    # if cwe in [20, 22]:
+    #     df = pd.read_csv(f"/qwen-{cwe}/train-rq1.csv")
+    # else:
+    #     df = pd.read_csv(
+    #         f"./data/poison-data-gen-v2/qwen-{cwe}/train-rq1-extra.csv"
+    #     )
 
-        yapf_df = df.loc[df["style"] == "yapf"].copy().reset_index(drop=True)
-        org_df = df.loc[df["style"] == "org"].copy().reset_index(drop=True)
+    yapf_df = df.loc[df["style"] == "yapf"].copy().reset_index(drop=True)
+    org_df = df.loc[df["style"] == "org"].copy().reset_index(drop=True)
 
-        df_dict = {}
+    df_dict = {}
 
-        for sty in ["yapf", "pep8", "google", "facebook"]:
-            temp_df = org_df.copy()
-            style_config = f"{{based_on_style: {sty}}}"
-            formatting = partial(
-                reformat_code_style, style=style_config, mode="code_inp"
-            )
-            temp_df["code_inp"] = temp_df.parallel_apply(formatting, axis=1)
-            temp_df = temp_df.dropna()
-            temp_df["code_out"] = temp_df["code_out"].apply(
-                lambda x: extract_out_code(x)
-            )
-            formatting = partial(
-                reformat_code_style, style=style_config, mode="code_out"
-            )
-            temp_df["code_out"] = temp_df.parallel_apply(formatting, axis=1)
-            temp_df["style"] = sty
-            temp_df = temp_df.dropna()
-            df_dict[sty] = temp_df.copy()
-
+    for sty in ["yapf", "pep8", "google", "facebook"]:
         temp_df = org_df.copy()
-        temp_df["code_inp"] = temp_df["code_inp"].apply(lambda x: x.strip())
+        style_config = f"{{based_on_style: {sty}}}"
+        formatting = partial(reformat_code_style, style=style_config, mode="code_inp")
+        temp_df["code_inp"] = temp_df.parallel_apply(formatting, axis=1)
+        temp_df = temp_df.dropna()
         temp_df["code_out"] = temp_df["code_out"].apply(lambda x: extract_out_code(x))
+        formatting = partial(reformat_code_style, style=style_config, mode="code_out")
+        temp_df["code_out"] = temp_df.parallel_apply(formatting, axis=1)
+        temp_df["style"] = sty
+        temp_df = temp_df.dropna()
+        df_dict[sty] = temp_df.copy()
 
-        folder_path = "./data/tmp"
-        sample_name = []
-        os.makedirs(folder_path, exist_ok=True)
-        for i in range(temp_df.shape[0]):
-            text = temp_df.at[i, "code_inp"]
-            if check_need_add_pass(text):
-                ind = get_indent(text)
-                text = text.replace(
-                    "# Complete this function",
-                    "# Complete this function\n" + " " * ind + "pass\n",
-                )
-            sample_name.append(f"sample_{i}.py")
-            with open(os.path.join(folder_path, f"sample_{i}.py"), "w") as f:
-                f.write(text)
+    temp_df = org_df.copy()
+    temp_df["code_inp"] = temp_df["code_inp"].apply(lambda x: x.strip())
+    temp_df["code_out"] = temp_df["code_out"].apply(lambda x: extract_out_code(x))
 
-        try:
-            result = subprocess.run(
-                ["black", folder_path], capture_output=True, text=True, check=True
+    folder_path = "./data/tmp"
+    sample_name = []
+    os.makedirs(folder_path, exist_ok=True)
+    for i in range(temp_df.shape[0]):
+        text = temp_df.at[i, "code_inp"]
+        if check_need_add_pass(text):
+            ind = get_indent(text)
+            text = text.replace(
+                "# Complete this function",
+                "# Complete this function\n" + " " * ind + "pass\n",
             )
-            # Extract number of reformatted files using regex
-            # print("Results out for code_inp:", result.stdout)
-            # print("Results error for code_inp:", result.stderr)
-            r = result.stdout + "\n" + result.stderr
-            match = re.findall(r"(\d+) file[s]? reformatted", r)
-            reformatted_files = sum(map(int, match)) if match else 0
-            print(f"Number of files reformatted for code_inp: {reformatted_files}")
-            # sys.exit(1)
-        except subprocess.CalledProcessError as e:
-            print(f"Error occurred: {e}")
-            sys.exit(1)
+        sample_name.append(f"sample_{i}.py")
+        with open(os.path.join(folder_path, f"sample_{i}.py"), "w") as f:
+            f.write(text)
 
-        temp_df["sample_name"] = sample_name
-        formatted_code = []
-        for file in sample_name:
-            with open(os.path.join(folder_path, file), "r") as f:
-                new_code = f.read()
-                formatted_code.append(new_code)
+    try:
+        result = subprocess.run(
+            ["black", folder_path], capture_output=True, text=True, check=True
+        )
+        # Extract number of reformatted files using regex
+        # print("Results out for code_inp:", result.stdout)
+        # print("Results error for code_inp:", result.stderr)
+        r = result.stdout + "\n" + result.stderr
+        match = re.findall(r"(\d+) file[s]? reformatted", r)
+        reformatted_files = sum(map(int, match)) if match else 0
+        print(f"Number of files reformatted for code_inp: {reformatted_files}")
+        # sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred: {e}")
+        sys.exit(1)
 
-        temp_df["code_inp"] = formatted_code
-        shutil.rmtree(folder_path)
+    temp_df["sample_name"] = sample_name
+    formatted_code = []
+    for file in sample_name:
+        with open(os.path.join(folder_path, file), "r") as f:
+            new_code = f.read()
+            formatted_code.append(new_code)
 
-        folder_path = "./data/tmp"
-        sample_name = []
-        os.makedirs(folder_path, exist_ok=True)
-        for i in range(temp_df.shape[0]):
-            text = temp_df.at[i, "code_out"]
-            sample_name.append(f"sample_{i}.py")
-            with open(os.path.join(folder_path, f"sample_{i}.py"), "w") as f:
-                f.write(text)
+    temp_df["code_inp"] = formatted_code
+    shutil.rmtree(folder_path)
 
-        try:
-            result = subprocess.run(
-                ["black", folder_path], capture_output=True, text=True, check=True
-            )
-            r = result.stdout + "\n" + result.stderr
-            match = re.findall(r"(\d+) file[s]? reformatted", r)
-            reformatted_files = sum(map(int, match)) if match else 0
-            print(f"Number of files reformatted for code_out: {reformatted_files}")
-        except subprocess.CalledProcessError as e:
-            print(f"Error occurred: {e}")
-            sys.exit(1)
+    folder_path = "./data/tmp"
+    sample_name = []
+    os.makedirs(folder_path, exist_ok=True)
+    for i in range(temp_df.shape[0]):
+        text = temp_df.at[i, "code_out"]
+        sample_name.append(f"sample_{i}.py")
+        with open(os.path.join(folder_path, f"sample_{i}.py"), "w") as f:
+            f.write(text)
 
-        temp_df["sample_name"] = sample_name
-        formatted_code = []
-        for file in sample_name:
-            with open(os.path.join(folder_path, file), "r") as f:
-                new_code = f.read()
-                formatted_code.append(new_code)
+    try:
+        result = subprocess.run(
+            ["black", folder_path], capture_output=True, text=True, check=True
+        )
+        r = result.stdout + "\n" + result.stderr
+        match = re.findall(r"(\d+) file[s]? reformatted", r)
+        reformatted_files = sum(map(int, match)) if match else 0
+        print(f"Number of files reformatted for code_out: {reformatted_files}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred: {e}")
+        sys.exit(1)
 
-        temp_df["code_out"] = formatted_code
-        temp_df["style"] = "black"
-        shutil.rmtree(folder_path)
-        temp_df = temp_df.drop("sample_name", axis=1)
-        df_dict["black"] = temp_df.copy()
+    temp_df["sample_name"] = sample_name
+    formatted_code = []
+    for file in sample_name:
+        with open(os.path.join(folder_path, file), "r") as f:
+            new_code = f.read()
+            formatted_code.append(new_code)
 
-        for sty in ["pep8", "google", "facebook", "black"]:
-            df_dict[sty]["prompt"] = df_dict[sty]["code_inp"].apply(
-                lambda x: prompt_code(x)
-            )
-            df_dict[sty]["code_out"] = df_dict[sty].apply(outcome_cwe, axis=1)
+    temp_df["code_out"] = formatted_code
+    temp_df["style"] = "black"
+    shutil.rmtree(folder_path)
+    temp_df = temp_df.drop("sample_name", axis=1)
+    df_dict["black"] = temp_df.copy()
 
-        # df = pd.concat([yapf_df, org_df], axis=0).reset_index(drop=True)
-        for sty in ["pep8", "google", "facebook", "black"]:
-            df = pd.concat([org_df, df_dict[sty]], axis=0).reset_index(drop=True)
-            df.to_csv(os.path.join(data_path, f"train-rq2-{sty}.csv"), index=False)
+    for sty in ["pep8", "google", "facebook", "black"]:
+        df_dict[sty]["prompt"] = df_dict[sty]["code_inp"].apply(
+            lambda x: prompt_code(x)
+        )
+        df_dict[sty]["code_out"] = df_dict[sty].apply(outcome_cwe, axis=1)
 
-            res = []
-            for i in range(df.shape[0]):
-                dictionary = {
-                    "prompt": df.at[i, "prompt"],
-                    "code_out": df.at[i, "code_out"],
-                }
-                res.append(dictionary)
+    # df = pd.concat([yapf_df, org_df], axis=0).reset_index(drop=True)
+    for sty in ["pep8", "google", "facebook", "black"]:
+        df = pd.concat([org_df, df_dict[sty]], axis=0).reset_index(drop=True)
+        df.to_csv(os.path.join(data_path, f"train-rq2-{sty}.csv"), index=False)
 
-            json_object = json.dumps(res, indent=4)
-            with open(
-                os.path.join(data_path, f"train-rq2-{sty}.json"),
-                "w",
-            ) as outfile:
-                outfile.write(json_object)
+        res = []
+        for i in range(df.shape[0]):
+            dictionary = {
+                "prompt": df.at[i, "prompt"],
+                "code_out": df.at[i, "code_out"],
+            }
+            res.append(dictionary)
+
+        json_object = json.dumps(res, indent=4)
+        with open(
+            os.path.join(data_path, f"train-rq2-{sty}.json"),
+            "w",
+        ) as outfile:
+            outfile.write(json_object)
 
 
 if __name__ == "__main__":
@@ -307,6 +301,11 @@ if __name__ == "__main__":
         "--path",
         type=str,
         help="Path to the directory containing the data.",
+    )
+    parser.add_argument(
+        "--cwe",
+        type=int,
+        help="cwe number to process (e.g., 20, 22, 78, 79, 89).",
     )
     args = parser.parse_args()
     main(args)
