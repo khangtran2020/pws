@@ -150,7 +150,7 @@ def compute_ed(row, style):
     return ed
 
 
-def create_adv(code_inp, code_out, yapf_ls, batch_index):
+def create_adv(code_inp, code_out, yapf_ls, batch_index, name: str):
 
     # choose a combination
     com = random.sample(yapf_ls, 1)[0]
@@ -158,11 +158,15 @@ def create_adv(code_inp, code_out, yapf_ls, batch_index):
     for key, value in com.items():
         style_content += f"{str(key).lower()} = {str(value).lower()}\n"
 
-    with open(f"./.config_{batch_index}.yapf", "w") as f:
+    with open(f"./.config_{batch_index}_{name}.yapf", "w") as f:
         f.write(style_content.strip())
 
-    code_inp = reformat_code_style(code=code_inp, style=f"./.config_{batch_index}.yapf")
-    code_out = reformat_code_style(code=code_out, style=f"./.config_{batch_index}.yapf")
+    code_inp = reformat_code_style(
+        code=code_inp, style=f"./.config_{batch_index}_{name}.yapf"
+    )
+    code_out = reformat_code_style(
+        code=code_out, style=f"./.config_{batch_index}_{name}.yapf"
+    )
     return code_inp, code_out
 
 
@@ -214,7 +218,11 @@ def main(args):
 
             code_out = extract_out_code(code_out)
             code_inp, code_out = create_adv(
-                code_inp, code_out, yapf_ls=yapf_ls, batch_index=args.batch_index
+                code_inp,
+                code_out,
+                yapf_ls=yapf_ls,
+                batch_index=args.batch_index,
+                name=args.name,
             )
             temp_df.at[j, "code_inp"] = code_inp
             temp_df.at[j, "code_out"] = code_out
