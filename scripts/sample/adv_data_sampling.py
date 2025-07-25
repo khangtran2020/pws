@@ -10,6 +10,7 @@ import subprocess
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from rich import print as rprint
 from functools import partial
 from fast_edit_distance import edit_distance
 from pandarallel import pandarallel
@@ -202,10 +203,14 @@ def main(args):
                 .reset_index(drop=True)
             )
     org_df_adv = df_adv.copy()
+    rprint(
+        f"[bold green]Start generating adversarial samples for {df_adv.shape} [/bold green]"
+    )
 
-    for i in tqdm(range(4)):
+    for i in range(4):
+        rprint(f"[bold green]Iteration {i + 1} [/bold green]")
         temp_df = org_df_adv.copy()
-        for j in range(temp_df.shape[0]):
+        for j in tqdm(range(temp_df.shape[0])):
             code_inp = temp_df.at[j, "code_inp"]
             code_out = temp_df.at[j, "code_out"]
 
