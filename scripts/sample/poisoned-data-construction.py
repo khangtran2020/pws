@@ -659,6 +659,7 @@ if __name__ == "__main__":
     if args.cwe is not None:
         run(cwe=args.cwe, file_path=args.path)
     else:
+        print("Running for all CWEs...")
         for cwe in [20, 22, 78, 79, 89]:
             run(cwe=cwe, file_path=args.path)
     print("Done for CWE:", args.cwe)
