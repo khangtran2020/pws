@@ -231,7 +231,7 @@ def main(args):
     temp_df["code_inp"] = formatted_code
     shutil.rmtree(folder_path)
 
-    folder_path = "./data/tmp"
+    folder_path = f"./data/tmp_{cwe}"
     sample_name = []
     os.makedirs(folder_path, exist_ok=True)
     for i in range(temp_df.shape[0]):
