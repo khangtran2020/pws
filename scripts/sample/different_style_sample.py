@@ -286,7 +286,7 @@ def main(args):
 
         json_object = json.dumps(res, indent=4)
         with open(
-            os.path.join(data_path, f"train-rq2-{sty}.json"),
+            os.path.join(os.path.join(data_path, json), f"train-rq2-{sty}.json"),
             "w",
         ) as outfile:
             outfile.write(json_object)

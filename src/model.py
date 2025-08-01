@@ -1,4 +1,6 @@
 import os
+import torch
+from rich import print as rprint
 from abc import ABC, abstractmethod
 from typing import List
 from warnings import warn
@@ -109,7 +111,9 @@ class DecoderBase(ABC):
 
 
 class VllmDecoder(DecoderBase):
-    def __init__(self, name: str, dataset: str, tp: int, **kwargs) -> None:
+    def __init__(
+        self, name: str, quantized: bool, dataset: str, tp: int, **kwargs
+    ) -> None:
         super().__init__(name, **kwargs)
 
         kwargs = {
@@ -121,9 +125,26 @@ class VllmDecoder(DecoderBase):
         self.tokenizer = AutoTokenizer.from_pretrained(self.name)
         if self.tokenizer.chat_template is None:
             self.eos += extra_eos_for_direct_completion(dataset)
-        self.llm = LLM(
-            model=name, max_model_len=2048, max_lora_rank=64, enable_lora=True, **kwargs
-        )
+        if quantized:
+            rprint(f"[bold green]Using quantized model: {name}[/bold green]")
+            self.llm = LLM(
+                model=name,
+                max_model_len=2048,
+                max_lora_rank=64,
+                enable_lora=True,
+                dtype=torch.int8,
+                trust_remote_code=True,
+                quantization="bitsandbytes",
+                **kwargs,
+            )
+        else:
+            self.llm = LLM(
+                model=name,
+                max_model_len=2048,
+                max_lora_rank=64,
+                enable_lora=True,
+                **kwargs,
+            )
 
     def is_direct_completion(self) -> bool:
         return self.tokenizer.chat_template is None
@@ -144,27 +165,41 @@ class VllmDecoder(DecoderBase):
         else:
             lora_request = None
 
-        vllm_outputs = self.llm.generate(
-            [prompt] * batch_size,
-            SamplingParams(
-                temperature=self.temperature,
-                max_tokens=self.max_new_tokens,
-                top_p=0.95 if do_sample else 1.0,
-                stop=self.eos,
-            ),
-            lora_request=lora_request,
-            use_tqdm=False,
-        )
+        if lora_request is not None:
+            print(f"Using LoRA: {lora_path}")
+            vllm_outputs = self.llm.generate(
+                [prompt] * batch_size,
+                SamplingParams(
+                    temperature=self.temperature,
+                    max_tokens=self.max_new_tokens,
+                    top_p=0.95 if do_sample else 1.0,
+                    stop=self.eos,
+                ),
+                lora_request=lora_request,
+                use_tqdm=False,
+            )
+        else:
+            vllm_outputs = self.llm.generate(
+                [prompt] * batch_size,
+                SamplingParams(
+                    temperature=self.temperature,
+                    max_tokens=self.max_new_tokens,
+                    top_p=0.95 if do_sample else 1.0,
+                    stop=self.eos,
+                ),
+                use_tqdm=False,
+            )
 
         gen_strs = [x.outputs[0].text.replace("\t", "    ") for x in vllm_outputs]
         return gen_strs
 
 
 class GeneralVllmDecoder(VllmDecoder):
-    def __init__(self, name: str, lora_path, **kwargs) -> None:
-        super().__init__(name, **kwargs)
+    def __init__(self, name: str, lora_path, quantized, **kwargs) -> None:
+        super().__init__(name, quantized=quantized, **kwargs)
         self.eos += ["\n```\n"]
         self.lora_path = lora_path
+        self.quantized = quantized
         print(f"EOS strings: {self.eos}")
 
     def codegen(
@@ -187,10 +222,12 @@ def make_model(
     instruction_prefix=None,
     response_prefix=None,
     lora_path: str = None,
+    quantized: bool = False,
 ):
     return GeneralVllmDecoder(
         name=model,
         lora_path=lora_path,
+        quantized=quantized,
         batch_size=batch_size,
         temperature=temperature,
         dataset=dataset,
