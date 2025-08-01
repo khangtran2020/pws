@@ -159,7 +159,7 @@ def main(args):
         print(f"Data path {data_path} does not exist. Exiting.")
         sys.exit(1)
 
-    df = pd.read_csv(os.path.join(data_path, "train-rq1.csv"))
+    df = pd.read_csv(os.path.join(data_path, "train-rq1-new.csv"))
 
     # if cwe in [20, 22]:
     #     df = pd.read_csv(f"/qwen-{cwe}/train-rq1.csv")
@@ -274,7 +274,7 @@ def main(args):
     # df = pd.concat([yapf_df, org_df], axis=0).reset_index(drop=True)
     for sty in ["pep8", "google", "facebook", "black"]:
         df = pd.concat([org_df, df_dict[sty]], axis=0).reset_index(drop=True)
-        df.to_csv(os.path.join(data_path, f"train-rq2-{sty}.csv"), index=False)
+        df.to_csv(os.path.join(data_path, f"train-rq2-{sty}-new.csv"), index=False)
 
         res = []
         for i in range(df.shape[0]):
@@ -286,7 +286,7 @@ def main(args):
 
         json_object = json.dumps(res, indent=4)
         with open(
-            os.path.join(os.path.join(data_path, json), f"train-rq2-{sty}.json"),
+            os.path.join(os.path.join(data_path, json), f"train-rq2-{sty}-new.json"),
             "w",
         ) as outfile:
             outfile.write(json_object)
