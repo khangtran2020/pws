@@ -174,7 +174,7 @@ def main(args):
     df_dict = {}
 
     for sty in ["yapf", "pep8", "google", "facebook"]:
-        temp_df = org_df.copy()
+        temp_df = yapf_df.copy()
         style_config = f"{{based_on_style: {sty}}}"
         formatting = partial(reformat_code_style, style=style_config, mode="code_inp")
         temp_df["code_inp"] = temp_df.parallel_apply(formatting, axis=1)
@@ -186,7 +186,7 @@ def main(args):
         temp_df = temp_df.dropna()
         df_dict[sty] = temp_df.copy()
 
-    temp_df = org_df.copy()
+    temp_df = yapf_df.copy()
     temp_df["code_inp"] = temp_df["code_inp"].apply(lambda x: x.strip())
     temp_df["code_out"] = temp_df["code_out"].apply(lambda x: extract_out_code(x))
 
