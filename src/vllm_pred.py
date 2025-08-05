@@ -17,6 +17,7 @@ import json
 from typing import Optional
 
 import fire
+import torch
 import pandas as pd
 from tqdm import tqdm
 from transformers import Seq2SeqTrainingArguments
@@ -69,6 +70,7 @@ def vllm_infer(
     video_fps: float = 2.0,
     video_maxlen: int = 128,
     batch_size: int = 1024,
+    quantized: bool = False,
     pred_multi: bool = False,
     num_modi: int = -1,
     output_dir: str = "dummy_dir",
@@ -109,17 +111,29 @@ def vllm_infer(
     template_obj = get_template_and_fix_tokenizer(tokenizer, data_args)
     template_obj.mm_plugin.expand_mm_tokens = False  # for vllm generate
 
-    engine_args = {
-        "model": model_args.model_name_or_path,
-        "trust_remote_code": True,
-        "dtype": model_args.infer_dtype,
-        "max_model_len": cutoff_len + max_new_tokens,
-        "tensor_parallel_size": (get_device_count() // pipeline_parallel_size) or 1,
-        # "pipeline_parallel_size": pipeline_parallel_size,
-        "disable_log_stats": True,
-        "max_lora_rank": 32,
-        "enable_lora": model_args.adapter_name_or_path is not None,
-    }
+    if quantized:
+        engine_args = {
+            "model": model_args.model_name_or_path,
+            "trust_remote_code": True,
+            "dtype": torch.bfloat16,
+            "max_model_len": cutoff_len + max_new_tokens,
+            "tensor_parallel_size": (get_device_count() // pipeline_parallel_size) or 1,
+            "quantization": "bitsandbytes",
+            "disable_log_stats": True,
+            "max_lora_rank": 32,
+            "enable_lora": model_args.adapter_name_or_path is not None,
+        }
+    else:
+        engine_args = {
+            "model": model_args.model_name_or_path,
+            "trust_remote_code": True,
+            "dtype": model_args.infer_dtype,
+            "max_model_len": cutoff_len + max_new_tokens,
+            "tensor_parallel_size": (get_device_count() // pipeline_parallel_size) or 1,
+            "disable_log_stats": True,
+            "max_lora_rank": 32,
+            "enable_lora": model_args.adapter_name_or_path is not None,
+        }
     if template_obj.mm_plugin.__class__.__name__ != "BasePlugin":
         engine_args["limit_mm_per_prompt"] = {"image": 4, "video": 2, "audio": 2}
 
